@@ -32,3 +32,6 @@ npm-debug.log*
 
 # Stryker
 .stryker-tmp/
+
+# SonarQube Scanner
+.scannerwork/

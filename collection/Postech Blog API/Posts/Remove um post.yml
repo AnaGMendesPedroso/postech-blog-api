@@ -1,0 +1,53 @@
+info:
+  name: Remove um post
+  type: http
+  seq: 6
+  tags:
+    - Posts
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/posts/:id"
+  params:
+    - name: id
+      value: 69b766f914382c099d0187d8
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 204 Response
+    description: Post removido
+    request:
+      url: "{{baseUrl}}/posts/:id"
+      method: DELETE
+      params:
+        - name: id
+          value: ""
+          type: path
+    response:
+      status: 204
+      statusText: No Content
+      body:
+        type: text
+        data: ""
+  - name: 404 Response
+    description: Post não encontrado
+    request:
+      url: "{{baseUrl}}/posts/:id"
+      method: DELETE
+      params:
+        - name: id
+          value: ""
+          type: path
+    response:
+      status: 404
+      statusText: Not Found
+      body:
+        type: text
+        data: ""

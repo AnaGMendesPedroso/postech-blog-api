@@ -45,6 +45,7 @@ const paginated = (res, data, pagination) => {
  * @param {*} details - Additional error details
  * @returns {Object} Express response
  */
+// eslint-disable-next-line max-params -- details is optional, keeps call sites clean
 const error = (res, message, statusCode = 500, details = null) => {
   const response = {
     success: false,

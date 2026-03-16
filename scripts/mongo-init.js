@@ -1,6 +1,8 @@
+/* global db, print */
 // MongoDB initialization script
 // Runs automatically on first container start
 
+// eslint-disable-next-line no-global-assign -- MongoDB shell idiom
 db = db.getSiblingDB('postech_blog');
 
 // Create posts collection with validation

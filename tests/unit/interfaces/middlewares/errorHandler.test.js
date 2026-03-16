@@ -1,5 +1,9 @@
 const errorHandler = require('../../../../src/interfaces/http/middlewares/errorHandler');
-const { AppError, NotFoundError, ValidationError } = require('../../../../src/domain/errors/AppError');
+const {
+  AppError,
+  NotFoundError,
+  ValidationError,
+} = require('../../../../src/domain/errors/AppError');
 
 // Mock logger
 jest.mock('../../../../src/infrastructure/logging/logger', () => ({

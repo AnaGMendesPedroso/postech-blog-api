@@ -12,7 +12,13 @@
     "lint": "eslint src/ tests/ --ext .js",
     "lint:fix": "eslint src/ tests/ --ext .js --fix",
     "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\"",
+    "swagger:export": "node scripts/generate-swagger.js",
     "sonar": "sonar-scanner",
+    "sonar:up": "./scripts/sonar-local.sh start",
+    "sonar:down": "./scripts/sonar-local.sh stop",
+    "sonar:reset": "./scripts/sonar-local.sh reset",
+    "sonar:status": "./scripts/sonar-local.sh status",
+    "sonar:analyze": "./scripts/sonar-local.sh analyze",
     "dev:setup": "./scripts/start-dev.sh",
     "dev:stop": "./scripts/start-dev.sh --stop",
     "dev:reset": "./scripts/start-dev.sh --reset",
@@ -24,7 +30,14 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"
   },
-  "keywords": ["blog", "education", "nodejs", "express", "mongodb", "api"],
+  "keywords": [
+    "blog",
+    "education",
+    "nodejs",
+    "express",
+    "mongodb",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -33,6 +46,7 @@
     "express": "^5.2.1",
     "joi": "^17.13.3",
     "mongoose": "^9.3.0",
+    "sonarqube-scanner": "^4.3.5",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.17.0"

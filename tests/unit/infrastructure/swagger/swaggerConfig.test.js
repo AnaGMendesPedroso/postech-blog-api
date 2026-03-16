@@ -1,5 +1,3 @@
-const swaggerJsdoc = require('swagger-jsdoc');
-
 describe('Swagger Configuration', () => {
   beforeEach(() => {
     jest.resetModules();

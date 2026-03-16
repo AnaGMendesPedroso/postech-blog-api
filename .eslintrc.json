@@ -18,7 +18,7 @@
     "max-depth": ["warn", 3],
     "complexity": ["warn", 10],
     "camelcase": ["error", { "properties": "never" }],
-    "id-length": ["warn", { "min": 2, "exceptions": ["i", "j", "k", "x", "y", "z", "e", "_"] }],
+    "id-length": ["warn", { "min": 2, "exceptions": ["i", "j", "k", "x", "y", "z", "e", "_", "q", "p", "t"] }],
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "no-unreachable": "error",
     "consistent-return": "error",

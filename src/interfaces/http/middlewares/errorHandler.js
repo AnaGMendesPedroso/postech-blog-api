@@ -5,6 +5,7 @@ const { error } = require('../presenters/responseFormatter');
  * Error Handler Middleware - Interface Layer
  * Centralized error handling for the application
  */
+// eslint-disable-next-line max-params -- Express error middleware requires (err, req, res, next)
 const errorHandler = (err, req, res, _next) => {
   // Log the error
   logger.error({

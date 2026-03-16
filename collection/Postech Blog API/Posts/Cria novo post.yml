@@ -1,0 +1,95 @@
+info:
+  name: Cria novo post
+  type: http
+  seq: 3
+  tags:
+    - Posts
+
+http:
+  method: POST
+  url: "{{baseUrl}}/posts"
+  body:
+    type: json
+    data: |-
+      {
+        "titulo": "teste",
+        "conteudo": "teste teste",
+        "autor": "test",
+        "status": "draft"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Post criado com sucesso
+    request:
+      url: "{{baseUrl}}/posts"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "titulo": "",
+            "conteudo": "",
+            "autor": "",
+            "status": "draft"
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "data": {
+              "id": "",
+              "titulo": "",
+              "conteudo": "",
+              "autor": "",
+              "status": "draft",
+              "createdAt": "",
+              "updatedAt": ""
+            }
+          }
+  - name: 400 Response
+    description: Dados inválidos
+    request:
+      url: "{{baseUrl}}/posts"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "titulo": "",
+            "conteudo": "",
+            "autor": "",
+            "status": "draft"
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "",
+              "details": [
+                {}
+              ]
+            }
+          }

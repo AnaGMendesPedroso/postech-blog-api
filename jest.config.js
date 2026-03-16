@@ -1,11 +1,7 @@
 module.exports = {
   testEnvironment: 'node',
   coverageDirectory: 'coverage',
-  collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/server.js',
-    '!src/infrastructure/swagger/**',
-  ],
+  collectCoverageFrom: ['src/**/*.js', '!src/server.js', '!src/infrastructure/swagger/**'],
   coverageThreshold: {
     global: {
       branches: 95,
