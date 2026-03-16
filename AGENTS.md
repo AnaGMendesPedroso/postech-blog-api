@@ -1,11 +1,11 @@
 # AGENTS.md
 
 ## Project Snapshot (March 2026)
-- Node.js CommonJS (`"type": "commonjs"`) — entry point: `src/server.js`
+- Node.js 24 LTS (Krypton) CommonJS (`"type": "commonjs"`) — entry point: `src/server.js`
 - Express 5 REST API for educational blogging platform
 - Layered architecture: DDD + Clean Code principles
 - MongoDB 7 via Docker (Mongoose 9 ODM)
-- **Status**: All endpoints implemented and verified. 166 unit tests, 100% coverage.
+- **Status**: All endpoints implemented and verified. 216 unit tests, 100% coverage.
 
 ## Architecture
 ```
@@ -109,7 +109,7 @@ npm run docker:logs        # Tail logs
 ```
 
 ### Docker Details
-- `Dockerfile`: multi-stage build, non-root user `nodejs`, creates `logs/` dir for Winston
+- `Dockerfile`: multi-stage build (`node:24-alpine`), non-root user `nodejs`, creates `logs/` dir for Winston
 - `docker-compose.yml`: API (depends_on mongodb healthy) + MongoDB, bridge network
 - `docker-compose.dev.yml`: MongoDB only, port 27017 exposed
 - `scripts/mongo-init.js`: seeds collection with schema validation, text indexes, 3 example posts
@@ -124,7 +124,7 @@ LOG_LEVEL=info
 ```
 
 ## Testing
-- **Jest** — 166 unit tests, 100% coverage (threshold: ≥95% branches/functions/lines/statements)
+- **Jest** — 216 unit tests, 100% coverage (threshold: ≥95% branches/functions/lines/statements)
 - **Supertest** — HTTP integration tests in route test files
 - **Stryker** — mutation testing (`npm run test:mutation`)
 - Test setup: `tests/setup.js` — silences logger, sets `NODE_ENV=test`

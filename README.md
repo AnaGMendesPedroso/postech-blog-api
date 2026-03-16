@@ -94,7 +94,7 @@ Sem autenticação JWT nesta fase. A diferenciação professor/aluno é feita vi
 
 ## 🛠️ Tecnologias
 
-- **Runtime**: Node.js 20+
+- **Runtime**: Node.js 24 LTS (Krypton)
 - **Framework**: Express 5
 - **Banco de Dados**: MongoDB 7 com Mongoose 9
 - **Validação**: Joi
@@ -110,13 +110,17 @@ Sem autenticação JWT nesta fase. A diferenciação professor/aluno é feita vi
 
 ### Pré-requisitos
 
-- Node.js 20+
+- Node.js 24+ (LTS Krypton) — recomendamos usar [nvm](https://github.com/nvm-sh/nvm) com o `.nvmrc` incluso
 - [Colima](https://github.com/abiosoft/colima) + Docker CLI + Docker Compose plugin
 - npm
 
 ```bash
 # Instalar pré-requisitos via Homebrew (macOS)
-brew install colima docker docker-compose
+brew install colima docker docker-compose nvm
+
+# Ativar a versão correta do Node.js via .nvmrc
+nvm install
+nvm use
 ```
 
 ### Passos
@@ -626,12 +630,13 @@ Atenção ao usar Mongoose 9: usar `{ returnDocument: 'after' }` em vez de `{ ne
 |------|--------|
 | API REST completa (9 endpoints) | ✅ |
 | MongoDB via Docker (dev + produção) | ✅ |
-| 166 testes unitários, 100% coverage | ✅ |
+| 216 testes unitários, 100% coverage | ✅ |
 | Swagger UI (`/api-docs`) | ✅ |
 | ESLint + Prettier (Clean Code + DDD) | ✅ |
 | SonarQube configurado | ✅ |
 | Stryker (mutation testing) | ✅ |
-| CI/CD GitHub Actions | ⬜ Pendente |
+| CI/CD GitHub Actions | ✅ |
+| Node.js 24 LTS (Krypton) | ✅ Atualizado via CI |
 
 ## 📄 Licença
 
