@@ -1,0 +1,72 @@
+{
+  "env": {
+    "node": true,
+    "es2021": true,
+    "jest": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": ["node"],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "rules": {
+    "max-lines-per-function": ["warn", { "max": 30, "skipBlankLines": true, "skipComments": true }],
+    "max-params": ["warn", 3],
+    "max-depth": ["warn", 3],
+    "complexity": ["warn", 10],
+    "camelcase": ["error", { "properties": "never" }],
+    "id-length": ["warn", { "min": 2, "exceptions": ["i", "j", "k", "x", "y", "z", "e", "_"] }],
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "no-unreachable": "error",
+    "consistent-return": "error",
+    "no-else-return": "warn",
+    "prefer-const": "error",
+    "no-var": "error",
+    "no-async-promise-executor": "error",
+    "require-await": "warn",
+    "no-return-await": "warn",
+    "eqeqeq": ["error", "always"],
+    "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
+    "curly": ["error", "all"],
+    "no-throw-literal": "error",
+    "prefer-promise-reject-errors": "error"
+  },
+  "overrides": [
+    {
+      "files": ["src/domain/**/*.js"],
+      "rules": {
+        "no-restricted-imports": ["error", {
+          "patterns": [
+            {
+              "group": ["mongoose", "express", "**/infrastructure/**", "**/interfaces/**"],
+              "message": "Domain deve ser agnóstico a frameworks. Não importe mongoose, express ou camadas externas."
+            }
+          ]
+        }]
+      }
+    },
+    {
+      "files": ["src/application/**/*.js"],
+      "rules": {
+        "no-restricted-imports": ["error", {
+          "patterns": [
+            {
+              "group": ["express", "**/interfaces/**"],
+              "message": "Application não deve depender de Express ou da camada de Interfaces."
+            }
+          ]
+        }]
+      }
+    },
+    {
+      "files": ["tests/**/*.js"],
+      "rules": {
+        "max-lines-per-function": "off",
+        "no-console": "off"
+      }
+    }
+  ]
+}
