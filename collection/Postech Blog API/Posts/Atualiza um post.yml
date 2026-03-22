@@ -10,17 +10,11 @@ http:
   url: "{{baseUrl}}/posts/:id"
   params:
     - name: id
-      value: ""
+      value: 69c075817c90539fa596e886
       type: path
   body:
     type: json
-    data: |-
-      {
-        "titulo": "",
-        "conteudo": "",
-        "autor": "",
-        "status": "draft"
-      }
+    data: "{}"
   auth: inherit
 
 settings:
