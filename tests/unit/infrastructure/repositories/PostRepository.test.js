@@ -248,6 +248,57 @@ describe('PostRepository', () => {
       expect(result.total).toBe(1);
     });
 
+    it('should filter by status when provided', async () => {
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockPostDoc]),
+      };
+      PostModel.find.mockReturnValue(mockQuery);
+      PostModel.countDocuments.mockResolvedValue(1);
+
+      await PostRepository.search('test', { status: 'draft', page: 1, limit: 10 });
+
+      expect(PostModel.find).toHaveBeenCalledWith(
+        { $text: { $search: 'test' }, status: 'draft' },
+        { score: { $meta: 'textScore' } }
+      );
+    });
+
+    it('should return all posts when status is "all"', async () => {
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockPostDoc]),
+      };
+      PostModel.find.mockReturnValue(mockQuery);
+      PostModel.countDocuments.mockResolvedValue(1);
+
+      await PostRepository.search('test', { status: 'all', page: 1, limit: 10 });
+
+      expect(PostModel.find).toHaveBeenCalledWith(
+        { $text: { $search: 'test' } },
+        { score: { $meta: 'textScore' } }
+      );
+    });
+
+    it('should return only published posts when status is undefined', async () => {
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue([mockPostDoc]),
+      };
+      PostModel.find.mockReturnValue(mockQuery);
+      PostModel.countDocuments.mockResolvedValue(1);
+
+      await PostRepository.search('test', { status: undefined, page: 1, limit: 10 });
+
+      expect(PostModel.find).toHaveBeenCalledWith(
+        { $text: { $search: 'test' }, status: 'published' },
+        { score: { $meta: 'textScore' } }
+      );
+    });
+
     it('should apply pagination to search results', async () => {
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),

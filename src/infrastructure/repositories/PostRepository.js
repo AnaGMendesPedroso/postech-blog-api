@@ -98,11 +98,16 @@ class PostRepository {
    * @param {Object} options - Query options
    * @returns {Promise<{posts: Post[], total: number}>}
    */
-  async search(keyword, { page = 1, limit = 10 } = {}) {
+  async search(keyword, { status, page = 1, limit = 10 } = {}) {
     const query = {
       $text: { $search: keyword },
-      status: 'published',
     };
+
+    if (status && status !== 'all') {
+      query.status = status;
+    } else if (!status) {
+      query.status = 'published';
+    }
 
     const skip = (page - 1) * limit;
 

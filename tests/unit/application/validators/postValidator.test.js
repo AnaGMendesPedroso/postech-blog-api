@@ -423,6 +423,23 @@ describe('Post Validators', () => {
       expect(error).toBeDefined();
       expect(error.details[0].message).toContain('inteiro');
     });
+
+    it('should accept valid status values', () => {
+      const { error: e1 } = searchPostsSchema.validate({ q: 'test', status: 'draft' });
+      const { error: e2 } = searchPostsSchema.validate({ q: 'test', status: 'published' });
+      const { error: e3 } = searchPostsSchema.validate({ q: 'test', status: 'all' });
+
+      expect(e1).toBeUndefined();
+      expect(e2).toBeUndefined();
+      expect(e3).toBeUndefined();
+    });
+
+    it('should reject invalid status with Portuguese message', () => {
+      const { error } = searchPostsSchema.validate({ q: 'test', status: 'invalid' });
+
+      expect(error).toBeDefined();
+      expect(error.details[0].message).toBe('Status deve ser "draft", "published" ou "all"');
+    });
   });
 
   describe('postIdSchema', () => {

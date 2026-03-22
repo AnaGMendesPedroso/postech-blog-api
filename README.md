@@ -336,7 +336,7 @@ Testes de unidade **sem nenhum mock** — a camada de domínio é JavaScript pur
 
 ---
 
-### 🟢 Camada Application — Testes com Mock de Repository (28 testes)
+### 🟢 Camada Application — Testes com Mock de Repository (31 testes)
 
 Testes de unidade onde o **repositório é mockado** via `jest.mock()` — valida a lógica dos use cases sem tocar no banco de dados.
 
@@ -419,12 +419,13 @@ Dois tipos de teste: **unitários** (mock de req/res/next) e **integração HTTP
 
 #### Testes Unitários de Controllers/Middlewares/Presenters
 
-**`PostController.test.js` (12 testes)** — Valida os 6 handlers (cada um com cenário de sucesso + erro):
+**`PostController.test.js` (13 testes)** — Valida os 6 handlers (cada um com cenário de sucesso + erro):
 - `create`: chama `postService.createPost`, retorna 201
 - `getAll`: chama `getAllPosts`, retorna resposta paginada
 - `getById`: chama `getPostById`, retorna 200
 - `update`: chama `updatePost`, retorna 200
 - `delete`: chama `deletePost`, retorna 204 sem body
+- `search`: chama `searchPosts` com keyword e status, retorna resposta paginada
 - Todos: delegam erros via `next(error)`
 
 ```javascript

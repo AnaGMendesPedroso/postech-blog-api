@@ -87,10 +87,10 @@ class PostService {
    * @param {Object} options - Query options
    * @returns {Promise<{posts: Post[], total: number, page: number, limit: number}>}
    */
-  async searchPosts(keyword, { page = 1, limit = 10 } = {}) {
-    logger.info('Searching posts', { keyword, page, limit });
+  async searchPosts(keyword, { status, page = 1, limit = 10 } = {}) {
+    logger.info('Searching posts', { keyword, status, page, limit });
 
-    const result = await postRepository.search(keyword, { page, limit });
+    const result = await postRepository.search(keyword, { status, page, limit });
 
     logger.info('Search completed', { keyword, count: result.posts.length });
 

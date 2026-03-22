@@ -47,6 +47,8 @@ No JWT. Teacher vs student views via query parameter:
 - `GET /posts` → only `status=published` (student default)
 - `GET /posts?status=all` → all posts (teacher view)
 - `GET /posts?status=draft` → drafts only (teacher view)
+- `GET /posts/search?q=term` → only `status=published` (student default)
+- `GET /posts/search?q=term&status=all` → search across all posts (teacher view)
 
 ### Repository → Entity Mapping
 `PostRepository._toEntity(doc)` converts every Mongoose document to a pure `Post` domain entity before returning. Controllers never see Mongoose objects.
@@ -124,7 +126,7 @@ LOG_LEVEL=info
 ```
 
 ## Testing
-- **Jest** — 216 unit tests, 100% coverage (threshold: ≥95% branches/functions/lines/statements)
+- **Jest** — 223 unit tests, 100% coverage (threshold: ≥95% branches/functions/lines/statements)
 - **Supertest** — HTTP integration tests in route test files
 - **Stryker** — mutation testing (`npm run test:mutation`)
 - Test setup: `tests/setup.js` — silences logger, sets `NODE_ENV=test`
@@ -144,7 +146,8 @@ Swagger UI: `http://localhost:3000/api-docs`
 | GET | `/posts` | Published posts (student view, paginated) |
 | GET | `/posts?status=all` | All posts (teacher view, paginated) |
 | GET | `/posts?status=draft` | Drafts only (teacher view) |
-| GET | `/posts/search?q=term` | Full-text search (title + content) |
+| GET | `/posts/search?q=term` | Full-text search — published only (student default) |
+| GET | `/posts/search?q=term&status=all` | Full-text search — all posts (teacher view) |
 | GET | `/posts/:id` | Single post by ID |
 | POST | `/posts` | Create post (defaults to draft) |
 | PUT | `/posts/:id` | Update post |

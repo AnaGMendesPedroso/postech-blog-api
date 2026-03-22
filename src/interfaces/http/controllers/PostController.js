@@ -87,8 +87,8 @@ class PostController {
    */
   async search(req, res, next) {
     try {
-      const { q: keyword, page, limit } = req.query;
-      const result = await postService.searchPosts(keyword, { page, limit });
+      const { q: keyword, status, page, limit } = req.query;
+      const result = await postService.searchPosts(keyword, { status, page, limit });
 
       paginated(
         res,

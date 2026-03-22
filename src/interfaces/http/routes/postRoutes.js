@@ -100,6 +100,12 @@ const router = express.Router();
  *           type: string
  *         description: Termo de busca
  *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [draft, published, all]
+ *         description: Filtrar por status (padrão retorna apenas published)
+ *       - in: query
  *         name: page
  *         schema:
  *           type: integer

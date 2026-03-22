@@ -191,17 +191,34 @@ describe('PostService', () => {
 
       const result = await PostService.searchPosts('JavaScript', { page: 1, limit: 10 });
 
-      expect(postRepository.search).toHaveBeenCalledWith('JavaScript', { page: 1, limit: 10 });
+      expect(postRepository.search).toHaveBeenCalledWith('JavaScript', {
+        status: undefined,
+        page: 1,
+        limit: 10,
+      });
       expect(result.posts).toEqual(mockPosts);
       expect(result.total).toBe(1);
       expect(logger.info).toHaveBeenCalledWith('Searching posts', {
         keyword: 'JavaScript',
+        status: undefined,
         page: 1,
         limit: 10,
       });
       expect(logger.info).toHaveBeenCalledWith('Search completed', {
         keyword: 'JavaScript',
         count: 1,
+      });
+    });
+
+    it('should pass status to repository when searching', async () => {
+      postRepository.search.mockResolvedValue({ posts: [], total: 0 });
+
+      await PostService.searchPosts('test', { status: 'all', page: 1, limit: 10 });
+
+      expect(postRepository.search).toHaveBeenCalledWith('test', {
+        status: 'all',
+        page: 1,
+        limit: 10,
       });
     });
 
@@ -219,11 +236,16 @@ describe('PostService', () => {
 
       const result = await PostService.searchPosts('test');
 
-      expect(postRepository.search).toHaveBeenCalledWith('test', { page: 1, limit: 10 });
+      expect(postRepository.search).toHaveBeenCalledWith('test', {
+        status: undefined,
+        page: 1,
+        limit: 10,
+      });
       expect(result.page).toBe(1);
       expect(result.limit).toBe(10);
       expect(logger.info).toHaveBeenCalledWith('Searching posts', {
         keyword: 'test',
+        status: undefined,
         page: 1,
         limit: 10,
       });

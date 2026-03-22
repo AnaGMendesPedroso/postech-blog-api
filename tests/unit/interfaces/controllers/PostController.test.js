@@ -218,6 +218,7 @@ describe('PostController', () => {
       await PostController.search(mockReq, mockRes, mockNext);
 
       expect(postService.searchPosts).toHaveBeenCalledWith('JavaScript', {
+        status: undefined,
         page: '1',
         limit: '10',
       });
@@ -231,6 +232,24 @@ describe('PostController', () => {
           total: 1,
           totalPages: 1,
         },
+      });
+    });
+
+    it('should pass status to service when searching', async () => {
+      mockReq.query = { q: 'test', status: 'all', page: '1', limit: '10' };
+      postService.searchPosts.mockResolvedValue({
+        posts: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+      });
+
+      await PostController.search(mockReq, mockRes, mockNext);
+
+      expect(postService.searchPosts).toHaveBeenCalledWith('test', {
+        status: 'all',
+        page: '1',
+        limit: '10',
       });
     });
 

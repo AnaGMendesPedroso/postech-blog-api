@@ -86,6 +86,9 @@ const searchPostsSchema = Joi.object({
     'string.empty': 'Termo de busca é obrigatório',
     'any.required': 'Termo de busca é obrigatório',
   }),
+  status: Joi.string().valid('draft', 'published', 'all').messages({
+    'any.only': 'Status deve ser "draft", "published" ou "all"',
+  }),
   page: Joi.number().integer().min(1).default(1).messages({
     'number.base': 'Página deve ser um número',
     'number.integer': 'Página deve ser um número inteiro',
