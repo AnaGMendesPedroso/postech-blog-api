@@ -19,20 +19,6 @@ http:
       }
   auth: inherit
 
-runtime:
-  scripts:
-    - type: before-request
-      code: |-
-        const { fakerPT_BR } = require('@faker-js/faker')
-
-        const randomAutor = fakerPT_BR.person.fullName()
-        const randomTitulo= fakerPT_BR.food.dish()
-        const randomConteudo= fakerPT_BR.food.description()
-
-        bru.setEnvVar("randomAutor", randomAutor)
-        bru.setEnvVar("randomTitulo", randomTitulo)
-        bru.setEnvVar("randomConteudo", randomConteudo)
-
 settings:
   encodeUrl: true
   timeout: 0

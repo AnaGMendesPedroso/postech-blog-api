@@ -7,7 +7,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/posts?status=all&page=1&limit=10"
+  url: "{{baseUrl}}/posts?status=all"
   params:
     - name: status
       value: draft
@@ -24,13 +24,15 @@ http:
       type: query
       description: Filtrar por status (padrão retorna apenas published)
     - name: page
-      value: "1"
+      value: "2"
       type: query
       description: Número da página
+      disabled: true
     - name: limit
       value: "10"
       type: query
       description: Itens por página
+      disabled: true
   auth: inherit
 
 settings:
