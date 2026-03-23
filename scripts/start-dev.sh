@@ -78,7 +78,17 @@ wait_for_docker() {
 # ---------------------------------------------------------------------------
 # MongoDB
 # ---------------------------------------------------------------------------
+check_port_available() {
+  local container
+  container=$(docker ps --filter "publish=27017" --format '{{.Names}}' 2>/dev/null || true)
+
+  if [ -n "$container" ] && [ "$container" != "postech-blog-mongodb" ]; then
+    fail "Porta 27017 já está em uso pelo container '$container'. Pare-o antes: docker stop $container"
+  fi
+}
 start_mongodb() {
+  check_port_available
+
   info "Subindo MongoDB via Docker Compose..."
   docker compose -f "$COMPOSE_FILE" up -d 2>&1 | grep -v "^$"
 
