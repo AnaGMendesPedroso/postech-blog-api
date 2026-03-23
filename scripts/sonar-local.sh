@@ -85,7 +85,7 @@ ensure_password_changed() {
   if [ "$http_code" = "200" ]; then
     local valid
     valid=$(curl -sf -u "$SONAR_DEFAULT_USER:$SONAR_DEFAULT_PASS" \
-      "$SONAR_URL/api/authentication/validate" | grep -o '"valid":true')
+      "$SONAR_URL/api/authentication/validate" | grep -o '"valid":true' || true)
 
     if [ -n "$valid" ]; then
       log_info "Alterando senha padrão do admin..."
@@ -94,6 +94,8 @@ ensure_password_changed() {
         -d "login=$SONAR_DEFAULT_USER&previousPassword=$SONAR_DEFAULT_PASS&password=$SONAR_NEW_PASS" \
         > /dev/null 2>&1 || true
       log_ok "Senha alterada para: $SONAR_NEW_PASS"
+    else
+      log_info "Senha padrão já foi alterada."
     fi
   fi
 }
