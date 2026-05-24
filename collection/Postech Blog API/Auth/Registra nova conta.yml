@@ -1,0 +1,182 @@
+info:
+  name: Registra nova conta
+  type: http
+  seq: 1
+  tags:
+    - Auth
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "nome": "Ana Silva",
+        "email": "ana@email.com",
+        "senha": "123456",
+        "role": "student"
+      }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+
+examples:
+  - name: 201 Student
+    description: Conta de aluna criada com sucesso
+    request:
+      url: "{{baseUrl}}/auth/register"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "nome": "Ana Silva",
+            "email": "ana@email.com",
+            "senha": "123456",
+            "role": "student"
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": true,
+            "data": {
+              "id": "",
+              "nome": "Ana Silva",
+              "email": "ana@email.com",
+              "role": "student",
+              "createdAt": "",
+              "updatedAt": ""
+            }
+          }
+  - name: 201 Teacher
+    description: Conta de professora criada com sucesso
+    request:
+      url: "{{baseUrl}}/auth/register"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "nome": "Prof Maria",
+            "email": "maria@email.com",
+            "senha": "123456",
+            "role": "teacher",
+            "codigoAcesso": "POSTECH-TEACHER-2026"
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": true,
+            "data": {
+              "id": "",
+              "nome": "Prof Maria",
+              "email": "maria@email.com",
+              "role": "teacher",
+              "createdAt": "",
+              "updatedAt": ""
+            }
+          }
+  - name: 400 Validation Error
+    description: Dados inválidos
+    request:
+      url: "{{baseUrl}}/auth/register"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "nome": "A",
+            "email": "invalid"
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Dados inválidos",
+              "details": []
+            }
+          }
+  - name: 403 Invalid Code
+    description: Código de acesso inválido para teacher
+    request:
+      url: "{{baseUrl}}/auth/register"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "nome": "Fake Teacher",
+            "email": "fake@email.com",
+            "senha": "123456",
+            "role": "teacher",
+            "codigoAcesso": "WRONG-CODE"
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Código de acesso inválido para perfil professor"
+            }
+          }
+  - name: 409 Email Duplicado
+    description: Email já cadastrado
+    request:
+      url: "{{baseUrl}}/auth/register"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "nome": "Ana",
+            "email": "ana@email.com",
+            "senha": "123456",
+            "role": "student"
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Email já cadastrado"
+            }
+          }

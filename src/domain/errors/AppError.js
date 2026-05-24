@@ -53,10 +53,30 @@ class InternalError extends AppError {
   }
 }
 
+/**
+ * Unauthorized error (401)
+ */
+class UnauthorizedError extends AppError {
+  constructor(message = 'Não autorizado') {
+    super(message, 401);
+  }
+}
+
+/**
+ * Forbidden error (403)
+ */
+class ForbiddenError extends AppError {
+  constructor(message = 'Acesso negado') {
+    super(message, 403);
+  }
+}
+
 module.exports = {
   AppError,
   NotFoundError,
   ValidationError,
   ConflictError,
   InternalError,
+  UnauthorizedError,
+  ForbiddenError,
 };

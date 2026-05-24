@@ -1,0 +1,94 @@
+info:
+  name: Realiza login - aluna
+  type: http
+  seq: 3
+  tags:
+    - Auth
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/login"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "ana@email.com",
+        "senha": "123456"
+      }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+
+scripts:
+  - type: after-response
+    code: |-
+      const res = bru.getResponseBody();
+      if (res.success && res.data && res.data.token) {
+        bru.setEnvVar("studentToken", res.data.token);
+      }
+
+examples:
+  - name: 200 Login OK - Aluna
+    description: Login de aluna realizado com sucesso — token salvo em studentToken (ambiente ativo)
+    request:
+      url: "{{baseUrl}}/auth/login"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "email": "ana@email.com",
+            "senha": "123456"
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": true,
+            "data": {
+              "user": {
+                "id": "",
+                "nome": "Ana Silva",
+                "email": "ana@email.com",
+                "role": "student",
+                "createdAt": "",
+                "updatedAt": ""
+              },
+              "token": ""
+            }
+          }
+  - name: 401 Credenciais Inválidas
+    description: Email ou senha incorretos
+    request:
+      url: "{{baseUrl}}/auth/login"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "email": "ana@email.com",
+            "senha": "wrong"
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Credenciais inválidas"
+            }
+          }

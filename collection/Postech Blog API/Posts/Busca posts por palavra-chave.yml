@@ -7,7 +7,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/posts/search?q=teste&status=all"
+  url: "{{baseUrl}}/posts/search?q=teste"
   params:
     - name: q
       value: teste
@@ -26,15 +26,19 @@ http:
     - name: status
       value: all
       type: query
+      description: Busca em todos os posts — visão professora (não requer JWT)
+      disabled: true
     - name: status
       value: draft
       type: query
+      description: Busca apenas em rascunhos
       disabled: true
     - name: status
       value: published
       type: query
+      description: Busca apenas em publicados (padrão)
       disabled: true
-  auth: inherit
+  auth: none
 
 settings:
   encodeUrl: true
@@ -43,24 +47,70 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 200 Response
-    description: Posts encontrados
+  - name: 200 Visão Aluna (published)
+    description: Busca apenas em posts publicados — endpoint público, sem autenticação
     request:
       url: "{{baseUrl}}/posts/search"
       method: GET
       params:
         - name: q
-          value: ""
+          value: "node"
           type: query
           description: Termo de busca
         - name: page
           value: "1"
           type: query
-          description: Número da página
         - name: limit
           value: "10"
           type: query
-          description: Itens por página
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": true,
+            "data": [
+              {
+                "id": "",
+                "titulo": "",
+                "conteudo": "",
+                "autor": "",
+                "status": "published",
+                "createdAt": "",
+                "updatedAt": ""
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 0,
+              "totalPages": 0
+            }
+          }
+  - name: 200 Visão Professora (status=all)
+    description: Busca em todos os posts independentemente do status — endpoint público, sem autenticação necessária
+    request:
+      url: "{{baseUrl}}/posts/search"
+      method: GET
+      params:
+        - name: q
+          value: "node"
+          type: query
+          description: Termo de busca
+        - name: status
+          value: all
+          type: query
+        - name: page
+          value: "1"
+          type: query
+        - name: limit
+          value: "10"
+          type: query
     response:
       status: 200
       statusText: OK
@@ -84,14 +134,14 @@ examples:
               }
             ],
             "pagination": {
-              "page": 0,
-              "limit": 0,
+              "page": 1,
+              "limit": 10,
               "total": 0,
               "totalPages": 0
             }
           }
-  - name: 400 Response
-    description: Parâmetros inválidos
+  - name: 400 Parâmetro q ausente
+    description: Parâmetro de busca obrigatório não informado
     request:
       url: "{{baseUrl}}/posts/search"
       method: GET
@@ -99,15 +149,6 @@ examples:
         - name: q
           value: ""
           type: query
-          description: Termo de busca
-        - name: page
-          value: "1"
-          type: query
-          description: Número da página
-        - name: limit
-          value: "10"
-          type: query
-          description: Itens por página
     response:
       status: 400
       statusText: Bad Request
@@ -120,9 +161,10 @@ examples:
           {
             "success": false,
             "error": {
-              "message": "",
+              "message": "Dados inválidos",
               "details": [
                 {}
               ]
             }
           }
+

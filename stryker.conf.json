@@ -17,9 +17,9 @@
     "fileName": "reports/mutation/mutation-report.json"
   },
   "thresholds": {
-    "high": 80,
-    "low": 60,
-    "break": 50
+    "high": 90,
+    "low": 80,
+    "break": 80
   },
   "concurrency": 4,
   "testRunnerNodeArgs": ["--experimental-vm-modules"],

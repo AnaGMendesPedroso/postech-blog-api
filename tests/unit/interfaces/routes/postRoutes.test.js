@@ -1,5 +1,6 @@
 const request = require('supertest');
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const postRoutes = require('../../../../src/interfaces/http/routes/postRoutes');
 const postService = require('../../../../src/application/usecases/PostService');
 const Post = require('../../../../src/domain/entities/Post');
@@ -25,9 +26,22 @@ const createTestApp = () => {
   return app;
 };
 
+// Generate valid teacher token for protected routes
+const generateTeacherToken = () => {
+  return jwt.sign(
+    { id: '507f1f77bcf86cd799439011', email: 'teacher@email.com', role: 'teacher' },
+    process.env.JWT_SECRET || 'test-secret',
+    { expiresIn: '1h' }
+  );
+};
+
 describe('Post Routes', () => {
+  let teacherToken;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.JWT_SECRET = 'test-secret';
+    teacherToken = generateTeacherToken();
   });
 
   describe('GET /posts', () => {
@@ -164,7 +178,10 @@ describe('Post Routes', () => {
       postService.createPost.mockResolvedValue(mockPost);
 
       const app = createTestApp();
-      const response = await request(app).post('/posts').send(postData);
+      const response = await request(app)
+        .post('/posts')
+        .set('Authorization', `Bearer ${teacherToken}`)
+        .send(postData);
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
@@ -173,7 +190,10 @@ describe('Post Routes', () => {
 
     it('should reject post with missing fields', async () => {
       const app = createTestApp();
-      const response = await request(app).post('/posts').send({ titulo: 'Only Title' });
+      const response = await request(app)
+        .post('/posts')
+        .set('Authorization', `Bearer ${teacherToken}`)
+        .send({ titulo: 'Only Title' });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -181,11 +201,14 @@ describe('Post Routes', () => {
 
     it('should reject post with short title', async () => {
       const app = createTestApp();
-      const response = await request(app).post('/posts').send({
-        titulo: 'AB',
-        conteudo: 'Valid content here',
-        autor: 'Author',
-      });
+      const response = await request(app)
+        .post('/posts')
+        .set('Authorization', `Bearer ${teacherToken}`)
+        .send({
+          titulo: 'AB',
+          conteudo: 'Valid content here',
+          autor: 'Author',
+        });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -193,14 +216,47 @@ describe('Post Routes', () => {
 
     it('should reject post with short content', async () => {
       const app = createTestApp();
-      const response = await request(app).post('/posts').send({
-        titulo: 'Valid Title',
-        conteudo: 'Short',
-        autor: 'Author',
-      });
+      const response = await request(app)
+        .post('/posts')
+        .set('Authorization', `Bearer ${teacherToken}`)
+        .send({
+          titulo: 'Valid Title',
+          conteudo: 'Short',
+          autor: 'Author',
+        });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
+    });
+
+    it('should reject post without authentication (401)', async () => {
+      const app = createTestApp();
+      const response = await request(app).post('/posts').send({
+        titulo: 'Valid Title',
+        conteudo: 'Valid content here',
+        autor: 'Author',
+      });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should reject post from student (403)', async () => {
+      const studentToken = jwt.sign(
+        { id: '123', email: 'student@email.com', role: 'student' },
+        'test-secret',
+        { expiresIn: '1h' }
+      );
+      const app = createTestApp();
+      const response = await request(app)
+        .post('/posts')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({
+          titulo: 'Valid Title',
+          conteudo: 'Valid content here',
+          autor: 'Author',
+        });
+
+      expect(response.status).toBe(403);
     });
   });
 
@@ -218,6 +274,7 @@ describe('Post Routes', () => {
       const app = createTestApp();
       const response = await request(app)
         .put('/posts/507f1f77bcf86cd799439011')
+        .set('Authorization', `Bearer ${teacherToken}`)
         .send({ titulo: 'Updated Title' });
 
       expect(response.status).toBe(200);
@@ -226,7 +283,10 @@ describe('Post Routes', () => {
 
     it('should reject update with empty body', async () => {
       const app = createTestApp();
-      const response = await request(app).put('/posts/507f1f77bcf86cd799439011').send({});
+      const response = await request(app)
+        .put('/posts/507f1f77bcf86cd799439011')
+        .set('Authorization', `Bearer ${teacherToken}`)
+        .send({});
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -236,6 +296,7 @@ describe('Post Routes', () => {
       const app = createTestApp();
       const response = await request(app)
         .put('/posts/invalid-id')
+        .set('Authorization', `Bearer ${teacherToken}`)
         .send({ titulo: 'Updated Title' });
 
       expect(response.status).toBe(400);
@@ -248,14 +309,18 @@ describe('Post Routes', () => {
       postService.deletePost.mockResolvedValue();
 
       const app = createTestApp();
-      const response = await request(app).delete('/posts/507f1f77bcf86cd799439011');
+      const response = await request(app)
+        .delete('/posts/507f1f77bcf86cd799439011')
+        .set('Authorization', `Bearer ${teacherToken}`);
 
       expect(response.status).toBe(204);
     });
 
     it('should reject delete with invalid id', async () => {
       const app = createTestApp();
-      const response = await request(app).delete('/posts/invalid-id');
+      const response = await request(app)
+        .delete('/posts/invalid-id')
+        .set('Authorization', `Bearer ${teacherToken}`);
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);

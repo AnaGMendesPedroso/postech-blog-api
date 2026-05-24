@@ -1,31 +1,32 @@
 # AGENTS.md
 
-## Project Snapshot (March 2026)
+## Project Snapshot (May 2026)
 - Node.js 24 LTS (Krypton) CommonJS (`"type": "commonjs"`) — entry point: `src/server.js`
 - Express 5 REST API for educational blogging platform
 - Layered architecture: DDD + Clean Code principles
 - MongoDB 7 via Docker (Mongoose 9 ODM)
-- **Status**: All endpoints implemented and verified. 216 unit tests, 100% coverage.
+- **JWT authentication** with role-based authorization (teacher/student)
+- **Status**: All endpoints implemented and verified. 293 unit tests, 97%+ coverage.
 
 ## Architecture
 ```
 src/
 ├── domain/           # Pure business entities (zero framework deps)
-│   ├── entities/     # Post — publish(), setDraft(), update(), toJSON()
-│   └── errors/       # AppError, NotFoundError, ValidationError, ConflictError, InternalError
+│   ├── entities/     # Post, User — pure domain objects with toJSON()
+│   └── errors/       # AppError, NotFoundError, ValidationError, ConflictError, InternalError, UnauthorizedError, ForbiddenError
 ├── application/      # Use cases + validation schemas
-│   ├── usecases/     # PostService (create, getAll, getById, update, delete, search)
-│   └── validators/   # Joi schemas: createPost, updatePost, queryPosts, searchPosts, postId
+│   ├── usecases/     # PostService, AuthService (register, login)
+│   └── validators/   # Joi schemas: createPost, updatePost, queryPosts, searchPosts, postId, register, login
 ├── infrastructure/   # External adapters
-│   ├── database/     # connection.js (connect/disconnect) + schemas/PostSchema.js
-│   ├── repositories/ # PostRepository — singleton, maps Mongoose docs → Post entities
+│   ├── database/     # connection.js + schemas/PostSchema.js, UserSchema.js
+│   ├── repositories/ # PostRepository, UserRepository — singletons, map docs → entities
 │   ├── logging/      # Winston logger (console always, file transports in production)
 │   └── swagger/      # swaggerConfig.js (OpenAPI 3.0 from JSDoc annotations)
 └── interfaces/       # HTTP layer
     └── http/
-        ├── controllers/  # PostController — thin, delegates to PostService
-        ├── middlewares/   # errorHandler (centralized), validateRequest (Joi → Express)
-        ├── routes/        # postRoutes.js (Swagger JSDoc inline), healthRoutes.js
+        ├── controllers/  # PostController, AuthController — thin, delegates to services
+        ├── middlewares/   # errorHandler, validateRequest, authenticate (JWT), authorize (role)
+        ├── routes/        # postRoutes.js, authRoutes.js, healthRoutes.js (Swagger JSDoc)
         └── presenters/    # responseFormatter — success(), paginated(), error()
 ```
 
@@ -42,8 +43,23 @@ infrastructure
 
 ## Key Patterns & Conventions
 
-### Status-Based Filtering (replaces authentication)
-No JWT. Teacher vs student views via query parameter:
+### Authentication & Authorization (JWT)
+- `POST /auth/register` — creates account (student: open; teacher: requires `codigoAcesso` matching env `TEACHER_ACCESS_CODE`)
+- `POST /auth/login` — returns JWT token with payload `{ id, email, role }`
+- Protected routes use `authenticate` middleware (verifies JWT) + `authorizeRole('teacher')` middleware
+- Token sent via `Authorization: Bearer <token>` header
+
+**Register examples:**
+```json
+// Student (no code needed)
+{ "nome": "Ana", "email": "ana@email.com", "senha": "123456", "role": "student" }
+
+// Teacher (requires codigoAcesso)
+{ "nome": "Maria", "email": "maria@email.com", "senha": "123456", "role": "teacher", "codigoAcesso": "POSTECH-TEACHER-2026" }
+```
+> `codigoAcesso` is validated against env var `TEACHER_ACCESS_CODE`. Default for dev: `POSTECH-TEACHER-2026`.
+
+### Status-Based Filtering
 - `GET /posts` → only `status=published` (student default)
 - `GET /posts?status=all` → all posts (teacher view)
 - `GET /posts?status=draft` → drafts only (teacher view)
@@ -123,12 +139,15 @@ PORT=3000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/postech_blog
 LOG_LEVEL=info
+JWT_SECRET=your-secret-key-here
+JWT_EXPIRES_IN=7d
+TEACHER_ACCESS_CODE=POSTECH-TEACHER-2026
 ```
 
 ## Testing
-- **Jest** — 223 unit tests, 100% coverage (threshold: ≥95% branches/functions/lines/statements)
+- **Jest** — 293 unit tests, 97%+ coverage (threshold: ≥95% branches/functions/lines/statements)
 - **Supertest** — HTTP integration tests in route test files
-- **Stryker** — mutation testing (`npm run test:mutation`)
+- **Stryker** — mutation testing (`npm run test:mutation`), thresholds: high 90%, break 80%
 - Test setup: `tests/setup.js` — silences logger, sets `NODE_ENV=test`
 - Server exports `app` but only calls `startServer()` when `NODE_ENV !== 'test'`
 
@@ -140,15 +159,17 @@ LOG_LEVEL=info
 ## API
 Swagger UI: `http://localhost:3000/api-docs`
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/health` | Health check (includes DB status) |
-| GET | `/posts` | Published posts (student view, paginated) |
-| GET | `/posts?status=all` | All posts (teacher view, paginated) |
-| GET | `/posts?status=draft` | Drafts only (teacher view) |
-| GET | `/posts/search?q=term` | Full-text search — published only (student default) |
-| GET | `/posts/search?q=term&status=all` | Full-text search — all posts (teacher view) |
-| GET | `/posts/:id` | Single post by ID |
-| POST | `/posts` | Create post (defaults to draft) |
-| PUT | `/posts/:id` | Update post |
-| DELETE | `/posts/:id` | Delete post (returns 204) |
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| GET | `/health` | — | Health check (includes DB status) |
+| POST | `/auth/register` | — | Create account (teacher requires codigoAcesso) |
+| POST | `/auth/login` | — | Login, returns JWT |
+| GET | `/posts` | — | Published posts (student view, paginated) |
+| GET | `/posts?status=all` | — | All posts (teacher view, paginated) |
+| GET | `/posts?status=draft` | — | Drafts only (teacher view) |
+| GET | `/posts/search?q=term` | — | Full-text search — published only (student default) |
+| GET | `/posts/search?q=term&status=all` | — | Full-text search — all posts (teacher view) |
+| GET | `/posts/:id` | — | Single post by ID |
+| POST | `/posts` | JWT (teacher) | Create post (defaults to draft) |
+| PUT | `/posts/:id` | JWT (teacher) | Update post |
+| DELETE | `/posts/:id` | JWT (teacher) | Delete post (returns 204) |

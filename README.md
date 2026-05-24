@@ -20,17 +20,20 @@
 
 A **Postech Blog API** é uma API REST desenvolvida como parte do Tech Challenge da pós-graduação em Desenvolvimento Full Stack da FIAP/Alura (PosTech). O projeto aborda um problema real da educação pública brasileira: a ausência de uma plataforma centralizada onde professores possam criar, gerenciar e compartilhar conteúdo educacional de forma prática e acessível.
 
-A aplicação permite que **professores** criem e editem postagens (incluindo rascunhos), enquanto **alunos** acessam apenas o conteúdo já publicado. A diferenciação de perfis é feita via query parameters, sem necessidade de autenticação JWT nesta fase.
+A aplicação permite que **professores** criem e editem postagens (incluindo rascunhos), enquanto **alunos** acessam apenas o conteúdo já publicado. A diferenciação de perfis é feita via **autenticação JWT com roles** (`teacher`/`student`): rotas de escrita exigem um token válido de professora. O registro de professoras é protegido por um código de acesso (`TEACHER_ACCESS_CODE`) para mitigar escalação de privilégios.
 
-Construída sobre princípios de **Clean Architecture** e **Domain-Driven Design (DDD)**, a API possui separação estrita de camadas (domain, application, infrastructure, interfaces), com fronteiras enforçadas via ESLint. O código segue padrões de **Clean Code** com limites de complexidade, cobertura de testes unitários de 100% e testes de mutação via Stryker para garantir a qualidade e sensibilidade da suíte de testes.
+Construída sobre princípios de **Clean Architecture** e **Domain-Driven Design (DDD)**, a API possui separação estrita de camadas (domain, application, infrastructure, interfaces), com fronteiras enforçadas via ESLint. O código segue padrões de **Clean Code** com limites de complexidade, cobertura de testes unitários superior a 97% e testes de mutação via Stryker para garantir a qualidade e sensibilidade da suíte de testes.
 
 ### Funcionalidades
 
 - ✅ Criar, editar e excluir postagens
-- ✅ Listar postagens publicadas (para alunos)
-- ✅ Listar todas as postagens incluindo rascunhos (para professores)
+- ✅ Listar postagens publicadas (para alunas)
+- ✅ Listar todas as postagens incluindo rascunhos (para professoras)
 - ✅ Buscar postagens por palavra-chave (full-text search)
 - ✅ Paginação em listagens
+- ✅ **Autenticação JWT** com registro e login
+- ✅ **Autorização por role** (`teacher`/`student`) nas rotas de escrita
+- ✅ **Código de acesso** para registro de professoras (mitigação de privilege escalation)
 - ✅ Documentação interativa com Swagger
 - ✅ Health check com status do banco de dados
 - ✅ Containerização completa com Docker (dev + produção)
@@ -42,21 +45,22 @@ O projeto segue os princípios de **Clean Architecture** e **DDD (Domain-Driven 
 ```
 src/
 ├── domain/           # Entidades e regras de negócio (sem dependências externas)
-│   ├── entities/     # Post — publish(), setDraft(), update(), toJSON()
-│   └── errors/       # AppError, NotFoundError, ValidationError, ConflictError, InternalError
+│   ├── entities/     # Post, User — entidades puras com toJSON()
+│   └── errors/       # AppError, NotFoundError, ValidationError, ConflictError,
+│                     # InternalError, UnauthorizedError, ForbiddenError
 ├── application/      # Casos de uso e lógica de aplicação
-│   ├── usecases/     # PostService com operações de negócio
-│   └── validators/   # Schemas de validação Joi
+│   ├── usecases/     # PostService, AuthService (register, login)
+│   └── validators/   # Schemas de validação Joi (posts + auth)
 ├── infrastructure/   # Implementações externas
-│   ├── database/     # Conexão MongoDB + schemas Mongoose
-│   ├── repositories/ # PostRepository — singleton, mapeia docs → entidades
+│   ├── database/     # Conexão MongoDB + schemas Mongoose (PostSchema, UserSchema)
+│   ├── repositories/ # PostRepository, UserRepository — singletons, mapeiam docs → entidades
 │   ├── logging/      # Winston (console + file em produção)
 │   └── swagger/      # Configuração OpenAPI 3.0
 └── interfaces/       # Adaptadores de interface
     └── http/
-        ├── controllers/  # Handlers HTTP thin
-        ├── middlewares/   # Validação Joi, error handler centralizado
-        ├── routes/        # Rotas REST com anotações Swagger JSDoc
+        ├── controllers/  # PostController, AuthController — handlers thin
+        ├── middlewares/   # validateRequest, errorHandler, authenticate (JWT), authorize (role)
+        ├── routes/        # postRoutes, authRoutes, healthRoutes (Swagger JSDoc)
         └── presenters/    # Formatação padronizada de respostas
 ```
 
@@ -68,7 +72,7 @@ src/
 │  ┌───────────────────────────────────┐  │
 │  │  application (use cases, Joi)     │  │
 │  │  ┌─────────────────────────────┐  │  │
-│  │  │  domain (Post, AppError)    │  │  │
+│  │  │  domain (Post, User, erros) │  │  │
 │  │  │  Núcleo puro, zero deps     │  │  │
 │  │  └─────────────────────────────┘  │  │
 │  └───────────────────────────────────┘  │
@@ -88,15 +92,18 @@ src/
 
 ### Diferenciação de Atores
 
-Sem autenticação JWT nesta fase. A diferenciação professor/aluno é feita via query parameter `status`:
-- **Aluno**: `GET /posts` → retorna apenas posts `published`
-- **Professor**: `GET /posts?status=all` → retorna todos; `?status=draft` → apenas rascunhos
+A diferenciação professora/aluna é feita via **autenticação JWT com roles**:
+- **Aluna (`student`)**: visualiza posts publicados e pode buscar por palavra-chave. Registro aberto, sem código.
+- **Professora (`teacher`)**: cria, edita e exclui posts (requer JWT com `role: teacher` no payload). Registro exige `codigoAcesso` correspondente à env `TEACHER_ACCESS_CODE`.
+- **Token**: enviado via header `Authorization: Bearer <token>`. Payload inclui `{ id, email, role }`.
+- **Endpoints de leitura** (`GET /posts`, `GET /posts/search`, `GET /posts/:id`) são públicos — não exigem JWT.
 
 ## 🛠️ Tecnologias
 
 - **Runtime**: Node.js 24 LTS (Krypton)
 - **Framework**: Express 5
 - **Banco de Dados**: MongoDB 7 com Mongoose 9
+- **Autenticação**: JSON Web Tokens (jsonwebtoken) + bcryptjs
 - **Validação**: Joi
 - **Documentação**: Swagger (OpenAPI 3.0)
 - **Logging**: Winston
@@ -128,7 +135,7 @@ nvm use
 1. Clone o repositório:
 ```bash
 git clone <repository-url>
-cd tech-challange-faseII
+cd postech-blog-api
 ```
 
 2. Instale as dependências:
@@ -171,6 +178,9 @@ npm run dev:stop
 | `NODE_ENV` | Ambiente (development/production/test) | `development` |
 | `MONGODB_URI` | URI de conexão MongoDB | `mongodb://localhost:27017/postech_blog` |
 | `LOG_LEVEL` | Nível de log (error/warn/info/debug) | `info` |
+| `JWT_SECRET` | Chave secreta para assinar tokens JWT | — (obrigatório) |
+| `JWT_EXPIRES_IN` | Tempo de expiração do token JWT | `7d` |
+| `TEACHER_ACCESS_CODE` | Código de acesso para registro de professoras | — (obrigatório) |
 
 ### Scripts npm
 
@@ -205,28 +215,95 @@ npm run docker:logs   # Acompanha logs dos containers
 
 ## 📡 Endpoints
 
-| Método | Rota | Descrição | Ator |
-|--------|------|-----------|------|
-| GET | `/health` | Health check (inclui status do DB) | Sistema |
-| GET | `/posts` | Lista posts publicados (paginado) | Aluno |
-| GET | `/posts?status=all` | Lista todos os posts (paginado) | Professor |
-| GET | `/posts?status=draft` | Lista rascunhos | Professor |
-| GET | `/posts/search?q=termo` | Busca full-text por palavra-chave | Aluno/Professor |
-| GET | `/posts/:id` | Busca post por ID | Aluno/Professor |
-| POST | `/posts` | Cria novo post (status=draft por padrão) | Professor |
-| PUT | `/posts/:id` | Atualiza post | Professor |
-| DELETE | `/posts/:id` | Remove post (retorna 204) | Professor |
+### Autenticação
 
-### Exemplo de Requisição
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| POST | `/auth/register` | — | Criar conta (`teacher` requer `codigoAcesso`) |
+| POST | `/auth/login` | — | Login, retorna JWT |
 
-**Criar Post:**
+### Posts
+
+| Método | Rota | Auth | Descrição |
+|--------|------|------|-----------|
+| GET | `/health` | — | Health check (inclui status do DB) |
+| GET | `/posts` | — | Lista posts publicados (paginado) |
+| GET | `/posts?status=all` | — | Lista todos os posts (paginado) |
+| GET | `/posts?status=draft` | — | Lista rascunhos |
+| GET | `/posts/search?q=termo` | — | Busca full-text por palavra-chave |
+| GET | `/posts/:id` | — | Busca post por ID |
+| POST | `/posts` | JWT (teacher) | Cria novo post |
+| PUT | `/posts/:id` | JWT (teacher) | Atualiza post |
+| DELETE | `/posts/:id` | JWT (teacher) | Remove post (retorna 204) |
+
+### Exemplos de Requisição
+
+**Registrar conta (student):**
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nome": "Ana Silva",
+    "email": "ana@email.com",
+    "senha": "123456",
+    "role": "student"
+  }'
+```
+
+**Registrar conta (teacher — requer `codigoAcesso`):**
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nome": "Professora Maria",
+    "email": "maria@email.com",
+    "senha": "123456",
+    "role": "teacher",
+    "codigoAcesso": "POSTECH-TEACHER-2026"
+  }'
+```
+
+> ⚠️ O campo `codigoAcesso` é **obrigatório** para `role: teacher` e **proibido** para `role: student`.
+> O valor deve corresponder à variável de ambiente `TEACHER_ACCESS_CODE` configurada no servidor.
+> Valor padrão para desenvolvimento: `POSTECH-TEACHER-2026`.
+
+**Login:**
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "maria@email.com",
+    "senha": "123456"
+  }'
+```
+
+**Resposta de login (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "507f1f77bcf86cd799439011",
+      "nome": "Professora Maria",
+      "email": "maria@email.com",
+      "role": "teacher",
+      "createdAt": "2026-05-24T10:00:00.000Z",
+      "updatedAt": "2026-05-24T10:00:00.000Z"
+    },
+    "token": "<jwt>"
+  }
+}
+```
+
+**Criar Post (requer token de teacher):**
 ```bash
 curl -X POST http://localhost:3000/posts \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token-jwt>" \
   -d '{
     "titulo": "Introdução ao JavaScript",
     "conteudo": "Neste post vamos aprender os fundamentos do JavaScript...",
-    "autor": "Professor Silva"
+    "autor": "Professora Maria"
   }'
 ```
 
@@ -238,15 +315,15 @@ curl -X POST http://localhost:3000/posts \
     "id": "507f1f77bcf86cd799439011",
     "titulo": "Introdução ao JavaScript",
     "conteudo": "Neste post vamos aprender os fundamentos do JavaScript...",
-    "autor": "Professor Silva",
+    "autor": "Professora Maria",
     "status": "draft",
-    "createdAt": "2026-03-15T10:30:00.000Z",
-    "updatedAt": "2026-03-15T10:30:00.000Z"
+    "createdAt": "2026-05-24T10:30:00.000Z",
+    "updatedAt": "2026-05-24T10:30:00.000Z"
   }
 }
 ```
 
-**Listar posts (visão professor):**
+**Listar posts (visão professora):**
 ```bash
 curl http://localhost:3000/posts?status=all&page=1&limit=10
 ```
@@ -265,15 +342,15 @@ A estratégia de testes segue os mesmos princípios da arquitetura DDD do projet
 ### Executar Testes
 
 ```bash
-npm test              # Todos os testes com coverage (166 testes, 100% coverage)
+npm test              # Todos os testes com coverage (293 testes, ~97% coverage)
 npm run test:watch    # Modo watch — re-executa ao salvar
 npm run test:mutation # Testes de mutação com Stryker
 ```
 
 ### Cobertura
 
-- **166 testes unitários** em 15 test suites
-- **100% de cobertura** (statements, branches, functions, lines)
+- **293 testes unitários** em 23 test suites
+- **~97% de cobertura** (statements, branches, functions, lines)
 - Threshold mínimo configurado: **≥95%** — o build falha se cair abaixo
 
 ### Configuração
@@ -290,36 +367,44 @@ A estrutura de testes espelha a estrutura do `src/`, garantindo que cada camada 
 
 ```
 tests/
-├── setup.js                                    # Configuração global
+├── setup.js                                         # Configuração global
 └── unit/
-    ├── domain/                                 # Testes de regras de negócio puras
-    │   ├── entities/Post.test.js               # 16 testes
-    │   └── errors/AppError.test.js             # 9 testes
-    ├── application/                            # Testes de casos de uso e validação
-    │   ├── usecases/PostService.test.js        # 10 testes
-    │   └── validators/postValidator.test.js    # 18 testes
-    ├── infrastructure/                         # Testes de adaptadores externos
-    │   ├── database/connection.test.js         # 9 testes
-    │   ├── database/PostSchema.test.js         # 8 testes
-    │   ├── logging/logger.test.js              # 12 testes
-    │   ├── repositories/PostRepository.test.js # 16 testes
-    │   └── swagger/swaggerConfig.test.js       # 5 testes
-    └── interfaces/                             # Testes da camada HTTP
-        ├── controllers/PostController.test.js  # 12 testes
-        ├── middlewares/errorHandler.test.js     # 7 testes
-        ├── middlewares/validateRequest.test.js  # 10 testes
-        ├── presenters/responseFormatter.test.js # 8 testes
-        ├── routes/postRoutes.test.js           # 16 testes (integração HTTP)
-        └── routes/healthRoutes.test.js         # 5 testes (integração HTTP)
+    ├── domain/                                      # Testes de regras de negócio puras
+    │   ├── entities/Post.test.js
+    │   ├── entities/User.test.js
+    │   └── errors/AppError.test.js
+    ├── application/                                 # Testes de casos de uso e validação
+    │   ├── usecases/PostService.test.js
+    │   ├── usecases/AuthService.test.js
+    │   ├── validators/postValidator.test.js
+    │   └── validators/authValidator.test.js
+    ├── infrastructure/                              # Testes de adaptadores externos
+    │   ├── database/connection.test.js
+    │   ├── database/PostSchema.test.js
+    │   ├── logging/logger.test.js
+    │   ├── repositories/PostRepository.test.js
+    │   ├── repositories/UserRepository.test.js
+    │   └── swagger/swaggerConfig.test.js
+    └── interfaces/                                  # Testes da camada HTTP
+        ├── controllers/PostController.test.js
+        ├── controllers/AuthController.test.js
+        ├── middlewares/errorHandler.test.js
+        ├── middlewares/validateRequest.test.js
+        ├── middlewares/authenticate.test.js
+        ├── middlewares/authorize.test.js
+        ├── presenters/responseFormatter.test.js
+        ├── routes/postRoutes.test.js
+        ├── routes/authRoutes.test.js
+        └── routes/healthRoutes.test.js
 ```
 
 ---
 
-### 🔵 Camada Domain — Testes Puros (25 testes)
+### 🔵 Camada Domain — Testes Puros
 
 Testes de unidade **sem nenhum mock** — a camada de domínio é JavaScript puro, sem dependências externas.
 
-**`Post.test.js` (16 testes)** — Valida toda a entidade `Post`:
+**`Post.test.js`** — Valida toda a entidade `Post`:
 - Construção com valores padrão (`status=draft`, datas automáticas)
 - Métodos de transição de estado: `publish()`, `setDraft()`
 - Métodos de consulta: `isPublished()`, `isDraft()`
@@ -327,149 +412,131 @@ Testes de unidade **sem nenhum mock** — a camada de domínio é JavaScript pur
 - Serialização `toJSON()` para resposta HTTP
 - Verificação de que `updatedAt` é atualizado nas mutações
 
-**`AppError.test.js` (9 testes)** — Valida toda a hierarquia de erros:
+**`User.test.js`** — Valida toda a entidade `User`:
+- Construção com todos os campos e datas padrão
+- Métodos `isTeacher()` e `isStudent()` com base no role
+- `toJSON()` omite o campo `senha` para segurança
+
+**`AppError.test.js`** — Valida toda a hierarquia de erros:
 - `AppError`: status code padrão (500), flag `isOperational`, stack trace
 - `NotFoundError`: mensagem com recurso dinâmico, status 404
 - `ValidationError`: mensagem + array de detalhes, status 400
 - `ConflictError`: status 409
+- `UnauthorizedError`: status 401
+- `ForbiddenError`: status 403
 - `InternalError`: mensagem padrão, status 500
 
 ---
 
-### 🟢 Camada Application — Testes com Mock de Repository (31 testes)
+### 🟢 Camada Application — Testes com Mock de Repository
 
 Testes de unidade onde o **repositório é mockado** via `jest.mock()` — valida a lógica dos use cases sem tocar no banco de dados.
 
-**`PostService.test.js` (10 testes)** — Valida todos os 6 use cases:
+**`PostService.test.js`** — Valida todos os 6 use cases de posts:
 - `createPost`: delega ao repositório, retorna entidade
-- `getAllPosts`: paginação (default e custom), parsing de string para int
+- `getAllPosts`: paginação (default e custom), parsing de string para int, filtro por status
 - `getPostById`: busca por ID, delegação correta
 - `updatePost`: delegação com ID + dados
 - `deletePost`: delegação da exclusão
-- `searchPosts`: busca por keyword com paginação, valores default
+- `searchPosts`: busca por keyword com paginação e status, valores default
 
-```javascript
-// Exemplo de padrão: mock do repositório
-jest.mock('../../../../src/infrastructure/repositories/PostRepository');
-postRepository.create.mockResolvedValue(mockPost);
-const result = await PostService.createPost(postData);
-expect(postRepository.create).toHaveBeenCalledWith(postData);
-```
+**`AuthService.test.js`** — Valida os casos de uso de autenticação:
+- `register` (student): cria conta sem código de acesso, hasheia senha com bcrypt
+- `register` (teacher): valida `codigoAcesso` contra `TEACHER_ACCESS_CODE`, rejeita código inválido ou ausente
+- `register`: rejeita email duplicado com `ConflictError`
+- `login`: autentica credenciais, retorna JWT com payload `{ id, email, role }`
+- `login`: rejeita email desconhecido e senha incorreta com `UnauthorizedError`
+- Nunca loga o campo `senha`
 
-**`postValidator.test.js` (18 testes)** — Valida todos os 5 schemas Joi:
-- `createPostSchema`: campos obrigatórios, limites de tamanho (titulo ≥3, conteudo ≥10), status enum
-- `updatePostSchema`: update parcial, rejeita body vazio
-- `queryPostsSchema`: status válidos (published/draft/all), paginação com defaults
-- `searchPostsSchema`: query `q` obrigatória, paginação
-- `postIdSchema`: formato válido de MongoDB ObjectId
+**`postValidator.test.js`** e **`authValidator.test.js`** — Validam todos os schemas Joi:
+- `createPostSchema`, `updatePostSchema`, `queryPostsSchema`, `searchPostsSchema`, `postIdSchema`
+- `registerSchema`: student (sem `codigoAcesso`), teacher (com `codigoAcesso`), restrições de tamanho, roles válidos
+- `loginSchema`: campos obrigatórios, formato de email
+- Mensagens de erro em português, `abortEarly: false`
 
 ---
 
-### 🟡 Camada Infrastructure — Testes com Mock do Mongoose (50 testes)
+### 🟡 Camada Infrastructure — Testes com Mock do Mongoose
 
-Testes onde o **Mongoose Model é mockado** — valida que o repositório traduz corretamente entre documentos Mongoose e entidades de domínio.
+Testes onde o **Mongoose Model é mockado** — valida que os repositórios traduzem corretamente entre documentos Mongoose e entidades de domínio.
 
-**`PostRepository.test.js` (16 testes)** — O teste mais rico, cobre:
-- `create`: chama `PostModel.create()`, retorna instância de `Post`
-- `findAll`: filtragem por status (`published`/`draft`/`all`/`undefined`), paginação (skip/limit), defaults
-- `findById`: retorna entidade, lança `NotFoundError` quando `null`
-- `update`: usa `returnDocument: 'after'` (Mongoose 9), lança `NotFoundError`
-- `delete`: chama `findByIdAndDelete`, lança `NotFoundError`
-- `search`: query `$text` com `$meta: textScore`, paginação, defaults
+**`PostRepository.test.js`** — Cobre `create`, `findAll` (filtro de status, paginação, defaults), `findById`, `update` (`returnDocument: 'after'`), `delete`, `search` (`$text` + `$meta: textScore`). Cada operação valida o lançamento de `NotFoundError` quando aplicável.
 
-```javascript
-// Exemplo de padrão: mock da cadeia fluente do Mongoose
-const mockQuery = {
-  sort: jest.fn().mockReturnThis(),
-  skip: jest.fn().mockReturnThis(),
-  limit: jest.fn().mockResolvedValue([mockPostDoc]),
-};
-PostModel.find.mockReturnValue(mockQuery);
-```
+**`UserRepository.test.js`** — Cobre `create` (retorna entidade `User`), `findByEmail` (retorna entidade ou `null`), `findById` (retorna entidade ou lança `NotFoundError`).
 
-**`connection.test.js` (9 testes)** — Valida `connectDatabase()` e `disconnectDatabase()`:
+**`connection.test.js`** — Valida `connectDatabase()` e `disconnectDatabase()`:
 - Conexão bem-sucedida, URI padrão quando env não definida
 - Registro de event handlers (`error`, `disconnected`)
 - Tratamento de falha na conexão (throw)
 - Desconexão bem-sucedida e com erro
 
-**`PostSchema.test.js` (8 testes)** — Valida o schema Mongoose:
+**`PostSchema.test.js`** — Valida o schema Mongoose de posts:
 - Campos obrigatórios, enum de status, default `draft`
-- Constraints de tamanho (titulo min/max, conteudo min)
-- Timestamps habilitados
-- Transformação `_id` → `id` no `toJSON()`
+- Constraints de tamanho (titulo min/max, conteudo min), trim de whitespace
+- Timestamps habilitados; transformação `_id` → `id` no `toJSON()`
+- Mensagens de validação em português
+- Índices: texto (`titulo` + `conteudo`), status, composto (`status` asc + `createdAt` desc)
 
-**`logger.test.js` (12 testes)** — Valida a configuração do Winston:
+**`logger.test.js`** — Valida a configuração do Winston:
 - Nível default, override via `LOG_LEVEL`
 - Console transport presente em todos os ambientes
 - File transports adicionados apenas em produção (`logs/error.log`, `logs/combined.log`)
-- Métodos `info`, `error`, `warn` funcionais
-- Metadata `service: 'postech-blog-api'` incluída
+- Métodos `info`, `error`, `warn` funcionais; metadata `service: 'postech-blog-api'`
 
-**`swaggerConfig.test.js` (5 testes)** — Valida a spec OpenAPI:
-- Exporta objeto válido, informações do projeto corretas
-- Servidor configurado, tags definidas
-- Paths extraídos das anotações JSDoc das rotas
+**`swaggerConfig.test.js`** — Valida a spec OpenAPI: informações do projeto, servidor configurado, tags definidas, paths extraídos das anotações JSDoc.
 
 ---
 
-### 🔴 Camada Interfaces — Testes com Mock de Service + Supertest (53 testes)
+### 🔴 Camada Interfaces — Testes com Mock de Service + Supertest
 
-Dois tipos de teste: **unitários** (mock de req/res/next) e **integração HTTP** (Supertest com Express real).
+Dois tipos: **unitários** (mock de req/res/next) e **integração HTTP** (Supertest com Express real).
 
-#### Testes Unitários de Controllers/Middlewares/Presenters
+#### Controllers
 
-**`PostController.test.js` (13 testes)** — Valida os 6 handlers (cada um com cenário de sucesso + erro):
-- `create`: chama `postService.createPost`, retorna 201
-- `getAll`: chama `getAllPosts`, retorna resposta paginada
-- `getById`: chama `getPostById`, retorna 200
-- `update`: chama `updatePost`, retorna 200
-- `delete`: chama `deletePost`, retorna 204 sem body
-- `search`: chama `searchPosts` com keyword e status, retorna resposta paginada
-- Todos: delegam erros via `next(error)`
+**`PostController.test.js`** — Valida os 6 handlers (sucesso + propagação de erro via `next`): `create` (201), `getAll` (paginado), `getById`, `update`, `delete` (204 sem body), `search` (com keyword e status).
 
-```javascript
-// Padrão: mock de req/res/next do Express
-mockReq = { body: {}, query: {}, params: {} };
-mockRes = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
-mockNext = jest.fn();
-```
+**`AuthController.test.js`** — Valida `register` (201 com dados do usuário) e `login` (200 com user + token); propagação de erros via `next`.
 
-**`errorHandler.test.js` (7 testes)** — Valida o middleware centralizado de erros:
+#### Middlewares
+
+**`authenticate.test.js`** — Valida o middleware JWT:
+- Token válido → popula `req.user` com `{ id, email, role }`
+- Header ausente → `UnauthorizedError`
+- Header sem prefixo `Bearer` → `UnauthorizedError`
+- Token expirado ou malformado → `UnauthorizedError`
+
+**`authorize.test.js`** — Valida o middleware de roles:
+- Role permitida (único ou múltiplos roles) → chama `next()`
+- Role não permitida → `ForbiddenError`
+
+**`errorHandler.test.js`** — Valida o middleware centralizado de erros:
 - Erros operacionais (`AppError`): propaga status code e mensagem
-- `NotFoundError`: retorna 404 com mensagem localizada
-- `ValidationError`: retorna 400 com array de `details`
+- `NotFoundError` (404), `ValidationError` (400 com `details`), `UnauthorizedError` (401), `ForbiddenError` (403)
 - Erros não operacionais (bugs): retorna 500 genérico
-- Mongoose `ValidationError`: converte para formato padronizado
-- Mongoose `CastError`: retorna 400 "ID inválido"
+- Mongoose `ValidationError` e `CastError` (ID inválido → 400)
 - Logging de todos os erros via Winston
 
-**`validateRequest.test.js` (10 testes)** — Valida o middleware de validação Joi:
-- Validação de `body`, `query` e `params`
-- Remoção de campos desconhecidos (strip unknown)
-- Coleta de todos os erros de validação (abortEarly: false)
-- Source padrão "body" quando não especificado
-- Helpers `validateBody()`, `validateQuery()`, `validateParams()`
+**`validateRequest.test.js`** — Valida validação de `body`, `query` e `params`; strip de campos desconhecidos; coleta todos os erros (`abortEarly: false`); helpers `validateBody()`, `validateQuery()`, `validateParams()`.
 
-**`responseFormatter.test.js` (8 testes)** — Valida o presenter:
-- `success()`: status default 200, custom status
-- `paginated()`: cálculo de `totalPages`, formato completo
-- `error()`: status default 500, custom status, com/sem `details`
+#### Presenters & Routes (integração HTTP)
 
-#### Testes de Integração HTTP (Supertest)
+**`responseFormatter.test.js`** — `success()`, `paginated()` (cálculo de totalPages), `error()` com e sem `details`.
 
-Estes testes sobem uma **instância real do Express** em memória (sem banco), com rotas e middlewares montados, e fazem requisições HTTP reais.
+**`postRoutes.test.js`** — 18 testes end-to-end via Supertest:
+- Listagem, filtro de status, busca, busca por ID
+- **Novo**: rejeita POST/PUT sem token (401) e com token de aluna (403)
+- Validações Joi integradas (campos faltantes, título/conteúdo curtos, ID inválido)
 
-**`postRoutes.test.js` (16 testes)** — Valida rotas end-to-end na camada HTTP:
-- `GET /posts`: retorna lista paginada, filtra por status, rejeita status inválido
-- `GET /posts/search?q=`: busca por keyword, rejeita sem query
-- `GET /posts/:id`: retorna post, rejeita ID inválido (formato ObjectId)
-- `POST /posts`: cria post, rejeita campos faltantes, rejeita titulo/conteudo curtos
-- `PUT /posts/:id`: atualiza, rejeita body vazio, rejeita ID inválido
-- `DELETE /posts/:id`: deleta com 204, rejeita ID inválido
+**`authRoutes.test.js`** — 10 testes end-to-end:
+- Registro de aluna (201) e professora com código válido (201)
+- Rejeita professora sem `codigoAcesso` (400), aluna com `codigoAcesso` (400)
+- Email duplicado (409), código inválido (403), dados inválidos (400)
+- Login bem-sucedido (200) e credenciais inválidas (401)
+
+**`healthRoutes.test.js`** — Valida todos os estados de conexão MongoDB: `connected`, `disconnected`, `connecting`, `disconnecting`, `unknown`.
 
 ```javascript
-// Padrão: mini app Express para teste de integração
+// Padrão de integração HTTP (Supertest)
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
@@ -483,10 +550,6 @@ const response = await request(app).get('/posts');
 expect(response.status).toBe(200);
 expect(response.body.success).toBe(true);
 ```
-
-**`healthRoutes.test.js` (5 testes)** — Valida o endpoint de health check:
-- Estado `connected` (readyState 1), `disconnected` (0), `connecting` (2), `disconnecting` (3)
-- Estado inválido retorna `unknown`
 
 ---
 
@@ -502,7 +565,7 @@ npm run test:mutation
 - Runner: Jest
 - Mutação: `src/**/*.js` (exclui `server.js`, `swagger/`, `logging/`)
 - Reports: HTML + JSON em `reports/mutation/`
-- Threshold: break em 50% (mutation score)
+- Threshold: break em 80%, high 90%
 - Concorrência: 4 workers paralelos
 
 ### Padrões de Teste Utilizados
@@ -574,6 +637,8 @@ docker build -t postech-blog-api .
 # Executar container
 docker run -p 3000:3000 \
   -e MONGODB_URI=mongodb://host.docker.internal:27017/postech_blog \
+  -e JWT_SECRET=my-secret \
+  -e TEACHER_ACCESS_CODE=POSTECH-TEACHER-2026 \
   postech-blog-api
 ```
 
@@ -582,7 +647,7 @@ docker run -p 3000:3000 \
 | Arquivo | Propósito |
 |---------|-----------|
 | `scripts/start-dev.sh` | Inicializa Colima + Docker + MongoDB em sequência |
-| `Dockerfile` | Multi-stage build (node:20-alpine), non-root user `nodejs`, dir `logs/` para Winston, healthcheck |
+| `Dockerfile` | Multi-stage build (node:24-alpine), non-root user `nodejs`, dir `logs/` para Winston, healthcheck |
 | `docker-compose.yml` | Stack completa: API + MongoDB com bridge network e healthchecks |
 | `docker-compose.dev.yml` | Apenas MongoDB para desenvolvimento local |
 | `scripts/mongo-init.js` | Seed: cria collection, índices e 3 posts de exemplo |
@@ -629,15 +694,17 @@ Atenção ao usar Mongoose 9: usar `{ returnDocument: 'after' }` em vez de `{ ne
 
 | Item | Status |
 |------|--------|
-| API REST completa (9 endpoints) | ✅ |
+| API REST completa (11 endpoints) | ✅ |
+| Autenticação JWT (register + login) | ✅ |
+| Autorização por role (teacher/student) | ✅ |
 | MongoDB via Docker (dev + produção) | ✅ |
-| 216 testes unitários, 100% coverage | ✅ |
+| 293 testes unitários, ~97% coverage | ✅ |
 | Swagger UI (`/api-docs`) | ✅ |
 | ESLint + Prettier (Clean Code + DDD) | ✅ |
 | SonarQube configurado | ✅ |
 | Stryker (mutation testing) | ✅ |
 | CI/CD GitHub Actions | ✅ |
-| Node.js 24 LTS (Krypton) | ✅ Atualizado via CI |
+| Node.js 24 LTS (Krypton) | ✅ |
 
 ## 📄 Licença
 

@@ -5,6 +5,61 @@
 // eslint-disable-next-line no-global-assign -- MongoDB shell idiom
 db = db.getSiblingDB('postech_blog');
 
+// Create users collection with validation
+db.createCollection('users', {
+  validator: {
+    $jsonSchema: {
+      bsonType: 'object',
+      required: ['nome', 'email', 'senha', 'role'],
+      properties: {
+        nome: {
+          bsonType: 'string',
+          minLength: 2,
+          maxLength: 100,
+          description: 'Nome da usuária — obrigatório, 2-100 caracteres',
+        },
+        email: {
+          bsonType: 'string',
+          description: 'Email da usuária — obrigatório, único',
+        },
+        senha: {
+          bsonType: 'string',
+          minLength: 6,
+          description: 'Senha hasheada — obrigatório',
+        },
+        role: {
+          bsonType: 'string',
+          enum: ['teacher', 'student'],
+          description: 'Perfil — teacher ou student',
+        },
+      },
+    },
+  },
+});
+
+// Create unique index for email
+db.users.createIndex({ email: 1 }, { unique: true });
+
+// Seed users (senhas: "123456" hasheadas com bcryptjs, salt 10)
+db.users.insertMany([
+  {
+    nome: 'Professora Silva',
+    email: 'teacher@example.com',
+    senha: '$2a$10$8K1p/a0dR3YG0EqC5N0zGOV9zP5h6N1QlWpY3YZC5mFnVf2xKpKi2',
+    role: 'teacher',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    nome: 'Aluna Santos',
+    email: 'student@example.com',
+    senha: '$2a$10$8K1p/a0dR3YG0EqC5N0zGOV9zP5h6N1QlWpY3YZC5mFnVf2xKpKi2',
+    role: 'student',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+]);
+
 // Create posts collection with validation
 db.createCollection('posts', {
   validator: {
@@ -78,6 +133,8 @@ db.posts.insertMany([
 ]);
 
 print('✅ Banco postech_blog inicializado com sucesso');
+print('   → Collection "users" criada com validação + índice único em email');
+print('   → 2 usuárias de exemplo (teacher@example.com, student@example.com) — senha: 123456');
 print('   → Collection "posts" criada com validação');
 print('   → Índices criados (text, status)');
 print('   → 3 posts de exemplo inseridos');

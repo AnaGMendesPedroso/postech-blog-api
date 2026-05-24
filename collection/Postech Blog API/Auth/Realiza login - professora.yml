@@ -1,0 +1,97 @@
+info:
+  name: Realiza login - professora
+  type: http
+  seq: 4
+  tags:
+    - Auth
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/login"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "maria@email.com",
+        "senha": "123456"
+      }
+  auth: none
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+scripts:
+  - type: after-response
+    code: |-
+      const res = bru.getResponseBody();
+      if (res.success && res.data && res.data.token) {
+        bru.setEnvVar("teacherToken", res.data.token);
+        bru.setEnvVar("authToken", res.data.token);
+      }
+
+examples:
+  - name: 200 Login OK - Professora
+    description: Login de professora realizado com sucesso — token salvo em teacherToken e authToken (ambiente ativo)
+    request:
+      url: "{{baseUrl}}/auth/login"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "email": "maria@email.com",
+            "senha": "123456"
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": true,
+            "data": {
+              "user": {
+                "id": "",
+                "nome": "Professora Maria",
+                "email": "maria@email.com",
+                "role": "teacher",
+                "createdAt": "",
+                "updatedAt": ""
+              },
+              "token": ""
+            }
+          }
+  - name: 401 Credenciais Inválidas
+    description: Email ou senha incorretos
+    request:
+      url: "{{baseUrl}}/auth/login"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "email": "maria@email.com",
+            "senha": "wrong"
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Credenciais inválidas"
+            }
+          }

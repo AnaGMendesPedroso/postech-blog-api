@@ -10,7 +10,7 @@ http:
   url: "{{baseUrl}}/posts/:id"
   params:
     - name: id
-      value: 69c073a47c90539fa596e882
+      value: 6a1377db927f71ae7e591669
       type: path
   auth: inherit
 
@@ -21,11 +21,14 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 204 Response
-    description: Post removido
+  - name: 204 Post Removido
+    description: Post removido com sucesso (requer token de professora)
     request:
       url: "{{baseUrl}}/posts/:id"
       method: DELETE
+      headers:
+        - name: Authorization
+          value: Bearer {{teacherToken}}
       params:
         - name: id
           value: ""
@@ -36,8 +39,8 @@ examples:
       body:
         type: text
         data: ""
-  - name: 404 Response
-    description: Post não encontrado
+  - name: 401 Não Autenticado
+    description: Token JWT ausente ou inválido
     request:
       url: "{{baseUrl}}/posts/:id"
       method: DELETE
@@ -46,8 +49,71 @@ examples:
           value: ""
           type: path
     response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Token não fornecido"
+            }
+          }
+  - name: 403 Sem Permissão (aluna)
+    description: Token válido mas role não é teacher
+    request:
+      url: "{{baseUrl}}/posts/:id"
+      method: DELETE
+      headers:
+        - name: Authorization
+          value: Bearer {{studentToken}}
+      params:
+        - name: id
+          value: ""
+          type: path
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Acesso negado: perfil insuficiente"
+            }
+          }
+  - name: 404 Post Não Encontrado
+    description: Post não encontrado pelo ID informado
+    request:
+      url: "{{baseUrl}}/posts/:id"
+      method: DELETE
+      headers:
+        - name: Authorization
+          value: Bearer {{teacherToken}}
+      params:
+        - name: id
+          value: ""
+          type: path
+    response:
       status: 404
       statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
       body:
-        type: text
-        data: ""
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Post não encontrado"
+            }
+          }

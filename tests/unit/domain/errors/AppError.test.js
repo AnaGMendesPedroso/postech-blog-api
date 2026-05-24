@@ -4,6 +4,8 @@ const {
   ValidationError,
   ConflictError,
   InternalError,
+  UnauthorizedError,
+  ForbiddenError,
 } = require('../../../../src/domain/errors/AppError');
 
 describe('AppError Classes', () => {
@@ -85,6 +87,40 @@ describe('AppError Classes', () => {
       const error = new InternalError('Database connection failed');
 
       expect(error.message).toBe('Database connection failed');
+    });
+  });
+
+  describe('UnauthorizedError', () => {
+    it('should create error with default message', () => {
+      const error = new UnauthorizedError();
+
+      expect(error.message).toBe('Não autorizado');
+      expect(error.statusCode).toBe(401);
+      expect(error.isOperational).toBe(true);
+    });
+
+    it('should create error with custom message', () => {
+      const error = new UnauthorizedError('Credenciais inválidas');
+
+      expect(error.message).toBe('Credenciais inválidas');
+      expect(error.statusCode).toBe(401);
+    });
+  });
+
+  describe('ForbiddenError', () => {
+    it('should create error with default message', () => {
+      const error = new ForbiddenError();
+
+      expect(error.message).toBe('Acesso negado');
+      expect(error.statusCode).toBe(403);
+      expect(error.isOperational).toBe(true);
+    });
+
+    it('should create error with custom message', () => {
+      const error = new ForbiddenError('Acesso negado para este perfil');
+
+      expect(error.message).toBe('Acesso negado para este perfil');
+      expect(error.statusCode).toBe(403);
     });
   });
 });

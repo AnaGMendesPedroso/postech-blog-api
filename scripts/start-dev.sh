@@ -44,7 +44,11 @@ start_colima() {
     success "Colima já está rodando"
   else
     info "Iniciando Colima..."
-    colima start --cpu 2 --memory 4 --disk 20 --vm-type vz --vz-rosetta 2>&1 | tail -1
+    if ! colima start --cpu 2 --memory 4 --disk 20 --vm-type vz --vz-rosetta 2>&1 | tail -1; then
+      warn "Falha ao iniciar Colima — deletando VM corrompida e recriando..."
+      colima delete --force 2>/dev/null || true
+      colima start --cpu 2 --memory 4 --disk 20 --vm-type vz --vz-rosetta 2>&1 | tail -1
+    fi
     success "Colima iniciado"
   fi
 }

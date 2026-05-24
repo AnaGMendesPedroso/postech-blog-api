@@ -1,6 +1,8 @@
 const express = require('express');
 const postController = require('../controllers/PostController');
 const { validateBody, validateQuery, validateParams } = require('../middlewares/validateRequest');
+const authenticate = require('../middlewares/authenticate');
+const authorizeRole = require('../middlewares/authorize');
 const {
   createPostSchema,
   updatePostSchema,
@@ -251,7 +253,13 @@ router.get('/:id', validateParams(postIdSchema), postController.getById);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', validateBody(createPostSchema), postController.create);
+router.post(
+  '/',
+  authenticate,
+  authorizeRole('teacher'),
+  validateBody(createPostSchema),
+  postController.create
+);
 
 /**
  * @swagger
@@ -298,6 +306,8 @@ router.post('/', validateBody(createPostSchema), postController.create);
  */
 router.put(
   '/:id',
+  authenticate,
+  authorizeRole('teacher'),
   validateParams(postIdSchema),
   validateBody(updatePostSchema),
   postController.update
@@ -321,6 +331,12 @@ router.put(
  *       404:
  *         description: Post não encontrado
  */
-router.delete('/:id', validateParams(postIdSchema), postController.delete);
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRole('teacher'),
+  validateParams(postIdSchema),
+  postController.delete
+);
 
 module.exports = router;

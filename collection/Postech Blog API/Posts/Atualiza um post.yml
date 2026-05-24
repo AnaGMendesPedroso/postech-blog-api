@@ -28,11 +28,14 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 200 Response
-    description: Post atualizado
+  - name: 200 Post Atualizado
+    description: Post atualizado com sucesso (requer token de professora)
     request:
       url: "{{baseUrl}}/posts/:id"
       method: PUT
+      headers:
+        - name: Authorization
+          value: "Bearer {{teacherToken}}"
       params:
         - name: id
           value: ""
@@ -41,10 +44,9 @@ examples:
         type: json
         data: |-
           {
-            "titulo": "",
-            "conteudo": "",
-            "autor": "",
-            "status": "draft"
+            "titulo": "Título atualizado",
+            "conteudo": "Conteúdo atualizado",
+            "status": "published"
           }
     response:
       status: 200
@@ -56,19 +58,19 @@ examples:
         type: json
         data: |-
           {
-            "success": false,
+            "success": true,
             "data": {
               "id": "",
-              "titulo": "",
-              "conteudo": "",
+              "titulo": "Título atualizado",
+              "conteudo": "Conteúdo atualizado",
               "autor": "",
-              "status": "draft",
+              "status": "published",
               "createdAt": "",
               "updatedAt": ""
             }
           }
-  - name: 404 Response
-    description: Post não encontrado
+  - name: 401 Não Autenticado
+    description: Token JWT ausente ou inválido
     request:
       url: "{{baseUrl}}/posts/:id"
       method: PUT
@@ -80,14 +82,87 @@ examples:
         type: json
         data: |-
           {
-            "titulo": "",
-            "conteudo": "",
-            "autor": "",
-            "status": "draft"
+            "conteudo": "Novo conteúdo"
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Token não fornecido"
+            }
+          }
+  - name: 403 Sem Permissão (aluna)
+    description: Token válido mas role não é teacher
+    request:
+      url: "{{baseUrl}}/posts/:id"
+      method: PUT
+      headers:
+        - name: Authorization
+          value: "Bearer {{studentToken}}"
+      params:
+        - name: id
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "conteudo": "Novo conteúdo"
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Acesso negado: perfil insuficiente"
+            }
+          }
+  - name: 404 Post Não Encontrado
+    description: Post não encontrado pelo ID informado
+    request:
+      url: "{{baseUrl}}/posts/:id"
+      method: PUT
+      headers:
+        - name: Authorization
+          value: "Bearer {{teacherToken}}"
+      params:
+        - name: id
+          value: ""
+          type: path
+      body:
+        type: json
+        data: |-
+          {
+            "conteudo": "Novo conteúdo"
           }
     response:
       status: 404
       statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
       body:
-        type: text
-        data: ""
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Post não encontrado"
+            }
+          }
+

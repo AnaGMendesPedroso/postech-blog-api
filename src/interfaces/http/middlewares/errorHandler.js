@@ -18,6 +18,15 @@ const errorHandler = (err, req, res, _next) => {
     params: req.params,
   });
 
+  // Handle JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    return error(res, 'Token inválido', 401);
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return error(res, 'Token expirado', 401);
+  }
+
   // Handle Mongoose validation errors
   if (err.name === 'ValidationError' && err.errors) {
     const details = Object.values(err.errors).map((e) => ({
@@ -30,6 +39,11 @@ const errorHandler = (err, req, res, _next) => {
   // Handle Mongoose CastError (invalid ObjectId)
   if (err.name === 'CastError' && err.kind === 'ObjectId') {
     return error(res, 'ID inválido', 400);
+  }
+
+  // Handle Mongoose duplicate key error
+  if (err.code === 11000) {
+    return error(res, 'Email já cadastrado', 409);
   }
 
   // Handle operational errors (known errors)

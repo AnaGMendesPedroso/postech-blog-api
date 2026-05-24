@@ -2,3 +2,9 @@ name: Servidor de desenvolvimento
 variables:
   - name: baseUrl
     value: http://localhost:3000
+  - name: authToken
+    value: ""
+  - name: teacherToken
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMTM3ZWU4NzkzMDgwOTNhMTA4MGYwYSIsImVtYWlsIjoibWFyaWFAZW1haWwuY29tIiwicm9sZSI6InRlYWNoZXIiLCJpYXQiOjE3Nzk2NjI3OTMsImV4cCI6MTc4MDI2NzU5M30.hmwN-cXkHkjUNa3MFcUi-qQyV0toiwkIvE-53cFXwfI
+  - name: studentToken
+    value: ""

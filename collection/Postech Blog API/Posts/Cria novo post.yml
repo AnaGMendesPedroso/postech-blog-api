@@ -26,18 +26,21 @@ settings:
   maxRedirects: 5
 
 examples:
-  - name: 201 Response
-    description: Post criado com sucesso
+  - name: 201 Post Criado
+    description: Post criado com sucesso (requer token de professora)
     request:
       url: "{{baseUrl}}/posts"
       method: POST
+      headers:
+        - name: Authorization
+          value: "Bearer {{teacherToken}}"
       body:
         type: json
         data: |-
           {
-            "titulo": "",
-            "conteudo": "",
-            "autor": "",
+            "titulo": "Introdução ao Node.js",
+            "conteudo": "Node.js é um runtime JavaScript...",
+            "autor": "Prof Maria",
             "status": "draft"
           }
     response:
@@ -50,22 +53,25 @@ examples:
         type: json
         data: |-
           {
-            "success": false,
+            "success": true,
             "data": {
               "id": "",
-              "titulo": "",
-              "conteudo": "",
-              "autor": "",
+              "titulo": "Introdução ao Node.js",
+              "conteudo": "Node.js é um runtime JavaScript...",
+              "autor": "Prof Maria",
               "status": "draft",
               "createdAt": "",
               "updatedAt": ""
             }
           }
-  - name: 400 Response
-    description: Dados inválidos
+  - name: 400 Dados Inválidos
+    description: Campos obrigatórios ausentes ou inválidos
     request:
       url: "{{baseUrl}}/posts"
       method: POST
+      headers:
+        - name: Authorization
+          value: "Bearer {{teacherToken}}"
       body:
         type: json
         data: |-
@@ -87,9 +93,71 @@ examples:
           {
             "success": false,
             "error": {
-              "message": "",
+              "message": "Dados inválidos",
               "details": [
                 {}
               ]
             }
           }
+  - name: 401 Não Autenticado
+    description: Token JWT ausente ou inválido
+    request:
+      url: "{{baseUrl}}/posts"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "titulo": "Post Teste",
+            "conteudo": "Conteúdo do post",
+            "autor": "Alguém",
+            "status": "draft"
+          }
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Token não fornecido"
+            }
+          }
+  - name: 403 Sem Permissão (aluna)
+    description: Token válido mas role não é teacher
+    request:
+      url: "{{baseUrl}}/posts"
+      method: POST
+      headers:
+        - name: Authorization
+          value: "Bearer {{studentToken}}"
+      body:
+        type: json
+        data: |-
+          {
+            "titulo": "Post Teste",
+            "conteudo": "Conteúdo do post",
+            "autor": "Ana",
+            "status": "draft"
+          }
+    response:
+      status: 403
+      statusText: Forbidden
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "success": false,
+            "error": {
+              "message": "Acesso negado: perfil insuficiente"
+            }
+          }
+
