@@ -57,7 +57,7 @@ userSchema.index({ email: 1 }, { unique: true });
  * @param {string} plainText - Plain text password
  * @returns {Promise<boolean>}
  */
-userSchema.methods.comparePassword = async function (plainText) {
+userSchema.methods.comparePassword = function (plainText) {
   return bcrypt.compare(plainText, this.senha);
 };
 

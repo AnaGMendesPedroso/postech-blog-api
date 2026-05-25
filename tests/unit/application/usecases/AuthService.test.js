@@ -2,7 +2,11 @@ const AuthService = require('../../../../src/application/usecases/AuthService');
 const userRepository = require('../../../../src/infrastructure/repositories/UserRepository');
 const logger = require('../../../../src/infrastructure/logging/logger');
 const User = require('../../../../src/domain/entities/User');
-const { ConflictError, UnauthorizedError, ForbiddenError } = require('../../../../src/domain/errors/AppError');
+const {
+  ConflictError,
+  UnauthorizedError,
+  ForbiddenError,
+} = require('../../../../src/domain/errors/AppError');
 
 jest.mock('../../../../src/infrastructure/repositories/UserRepository');
 jest.mock('../../../../src/infrastructure/logging/logger', () => ({
@@ -249,11 +253,9 @@ describe('AuthService', () => {
     it('should not log sensitive data (senha)', async () => {
       userRepository.findByEmail.mockResolvedValue(null);
 
-      try {
-        await AuthService.login({ email: 'ana@email.com', senha: 'secret123' });
-      } catch (e) {
-        // expected
-      }
+      await expect(
+        AuthService.login({ email: 'ana@email.com', senha: 'secret123' })
+      ).rejects.toThrow(UnauthorizedError);
 
       const logCalls = logger.info.mock.calls.flat();
       const logString = JSON.stringify(logCalls);

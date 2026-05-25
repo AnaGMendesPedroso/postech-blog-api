@@ -25,11 +25,13 @@ describe('authenticate middleware', () => {
     authenticate(mockReq, mockRes, mockNext);
 
     // Then: user is attached to req
-    expect(mockReq.user).toEqual(expect.objectContaining({
-      id: '123',
-      email: 'ana@email.com',
-      role: 'teacher',
-    }));
+    expect(mockReq.user).toEqual(
+      expect.objectContaining({
+        id: '123',
+        email: 'ana@email.com',
+        role: 'teacher',
+      })
+    );
     expect(mockNext).toHaveBeenCalledWith();
   });
 
@@ -53,11 +55,9 @@ describe('authenticate middleware', () => {
 
   it('should reject when token is expired', () => {
     // Given: an expired token
-    const token = jwt.sign(
-      { id: '123', email: 'ana@email.com', role: 'student' },
-      'test-secret',
-      { expiresIn: '-1s' }
-    );
+    const token = jwt.sign({ id: '123', email: 'ana@email.com', role: 'student' }, 'test-secret', {
+      expiresIn: '-1s',
+    });
     const mockReq = { headers: { authorization: `Bearer ${token}` } };
 
     // When/Then: UnauthorizedError

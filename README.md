@@ -1,242 +1,57 @@
 # Postech Blog API
 
-> API REST para professores da rede pública de educação publicarem e gerenciarem conteúdo educacional para alunos — Tech Challenge FIAP/Alura PosTech.
+API REST para professores publicarem e gerenciarem conteúdo educacional para alunos.
 
-## 📋 Índice
+Este repositório contém a API (Node.js + Express) do projeto Postech Blog, com autenticação JWT
+e autorização por roles (teacher/student). A arquitetura é baseada em DDD e Clean Architecture.
 
-- [Sobre o Projeto](#sobre-o-projeto)
-- [Arquitetura](#arquitetura)
-- [Tecnologias](#tecnologias)
-- [Instalação](#instalação)
-- [Uso](#uso)
-- [Endpoints](#endpoints)
-- [Testes](#testes)
-- [Docker](#docker)
-- [Documentação da API](#documentação-da-api)
-- [Qualidade de Código](#-qualidade-de-código)
-- [Status do Projeto](#-status-do-projeto)
+Links rápidos
+- Quickstart (primeira vez local): see [INSTALLATION](docs/INSTALLATION.md)
+- Arquitetura e estrutura do projeto: see [ARCHITECTURE](docs/ARCHITECTURE.md)
+- Endpoints & Documentação: see [API](docs/API.md)
+- Uso, exemplos e scripts npm: see [USAGE](docs/USAGE.md)
+- Testes e cobertura: see [TESTS](docs/TESTS.md)
+- Docker / Colima: see [DOCKER](docs/DOCKER.md)
+- Qualidade de código (ESLint, Stryker, Sonar): see [QUALITY](docs/QUALITY.md)
 
-## 📖 Sobre o Projeto
-
-A **Postech Blog API** é uma API REST desenvolvida como parte do Tech Challenge da pós-graduação em Desenvolvimento Full Stack da FIAP/Alura (PosTech). O projeto aborda um problema real da educação pública brasileira: a ausência de uma plataforma centralizada onde professores possam criar, gerenciar e compartilhar conteúdo educacional de forma prática e acessível.
-
-A aplicação permite que **professores** criem e editem postagens (incluindo rascunhos), enquanto **alunos** acessam apenas o conteúdo já publicado. A diferenciação de perfis é feita via **autenticação JWT com roles** (`teacher`/`student`): rotas de escrita exigem um token válido de professora. O registro de professoras é protegido por um código de acesso (`TEACHER_ACCESS_CODE`) para mitigar escalação de privilégios.
-
-Construída sobre princípios de **Clean Architecture** e **Domain-Driven Design (DDD)**, a API possui separação estrita de camadas (domain, application, infrastructure, interfaces), com fronteiras enforçadas via ESLint. O código segue padrões de **Clean Code** com limites de complexidade, cobertura de testes unitários superior a 97% e testes de mutação via Stryker para garantir a qualidade e sensibilidade da suíte de testes.
-
-### Funcionalidades
-
-- ✅ Criar, editar e excluir postagens
-- ✅ Listar postagens publicadas (para alunas)
-- ✅ Listar todas as postagens incluindo rascunhos (para professoras)
-- ✅ Buscar postagens por palavra-chave (full-text search)
-- ✅ Paginação em listagens
-- ✅ **Autenticação JWT** com registro e login
-- ✅ **Autorização por role** (`teacher`/`student`) nas rotas de escrita
-- ✅ **Código de acesso** para registro de professoras (mitigação de privilege escalation)
-- ✅ Documentação interativa com Swagger
-- ✅ Health check com status do banco de dados
-- ✅ Containerização completa com Docker (dev + produção)
-
-## 🏗️ Arquitetura
-
-O projeto segue os princípios de **Clean Architecture** e **DDD (Domain-Driven Design)**:
-
-```
-src/
-├── domain/           # Entidades e regras de negócio (sem dependências externas)
-│   ├── entities/     # Post, User — entidades puras com toJSON()
-│   └── errors/       # AppError, NotFoundError, ValidationError, ConflictError,
-│                     # InternalError, UnauthorizedError, ForbiddenError
-├── application/      # Casos de uso e lógica de aplicação
-│   ├── usecases/     # PostService, AuthService (register, login)
-│   └── validators/   # Schemas de validação Joi (posts + auth)
-├── infrastructure/   # Implementações externas
-│   ├── database/     # Conexão MongoDB + schemas Mongoose (PostSchema, UserSchema)
-│   ├── repositories/ # PostRepository, UserRepository — singletons, mapeiam docs → entidades
-│   ├── logging/      # Winston (console + file em produção)
-│   └── swagger/      # Configuração OpenAPI 3.0
-└── interfaces/       # Adaptadores de interface
-    └── http/
-        ├── controllers/  # PostController, AuthController — handlers thin
-        ├── middlewares/   # validateRequest, errorHandler, authenticate (JWT), authorize (role)
-        ├── routes/        # postRoutes, authRoutes, healthRoutes (Swagger JSDoc)
-        └── presenters/    # Formatação padronizada de respostas
-```
-
-### Fluxo de Dependências (enforced via ESLint)
-
-```
-┌─────────────────────────────────────────┐
-│  interfaces (Express, HTTP, rotas)      │
-│  ┌───────────────────────────────────┐  │
-│  │  application (use cases, Joi)     │  │
-│  │  ┌─────────────────────────────┐  │  │
-│  │  │  domain (Post, User, erros) │  │  │
-│  │  │  Núcleo puro, zero deps     │  │  │
-│  │  └─────────────────────────────┘  │  │
-│  └───────────────────────────────────┘  │
-└─────────────────────────────────────────┘
-        ↕
-┌─────────────────────────────────────────┐
-│  infrastructure (Mongoose, Winston)     │
-└─────────────────────────────────────────┘
-```
-
-| Camada | Restrição |
-|--------|-----------|
-| `domain/` | Não importa mongoose, express, infrastructure, interfaces |
-| `application/` | Não importa express, interfaces |
-| `infrastructure/` | Pode importar domain e application |
-| `interfaces/` | Pode importar application (não domain diretamente) |
-
-### Diferenciação de Atores
-
-A diferenciação professora/aluna é feita via **autenticação JWT com roles**:
-- **Aluna (`student`)**: visualiza posts publicados e pode buscar por palavra-chave. Registro aberto, sem código.
-- **Professora (`teacher`)**: cria, edita e exclui posts (requer JWT com `role: teacher` no payload). Registro exige `codigoAcesso` correspondente à env `TEACHER_ACCESS_CODE`.
-- **Token**: enviado via header `Authorization: Bearer <token>`. Payload inclui `{ id, email, role }`.
-- **Endpoints de leitura** (`GET /posts`, `GET /posts/search`, `GET /posts/:id`) são públicos — não exigem JWT.
-
-## 🛠️ Tecnologias
-
-- **Runtime**: Node.js 24 LTS (Krypton)
-- **Framework**: Express 5
-- **Banco de Dados**: MongoDB 7 com Mongoose 9
-- **Autenticação**: JSON Web Tokens (jsonwebtoken) + bcryptjs
-- **Validação**: Joi
-- **Documentação**: Swagger (OpenAPI 3.0)
-- **Logging**: Winston
-- **Testes**: Jest + Supertest
-- **Testes de Mutação**: Stryker
-- **Linter**: ESLint + Prettier
-- **Análise de Código**: SonarQube
-- **Container**: Docker (Compose V2) via Colima (macOS)
-
-## 🚀 Instalação
-
-### Pré-requisitos
-
-- Node.js 24+ (LTS Krypton) — recomendamos usar [nvm](https://github.com/nvm-sh/nvm) com o `.nvmrc` incluso
-- [Colima](https://github.com/abiosoft/colima) + Docker CLI + Docker Compose plugin
-- npm
-
-```bash
-# Instalar pré-requisitos via Homebrew (macOS)
-brew install colima docker docker-compose nvm
-
-# Ativar a versão correta do Node.js via .nvmrc
-nvm install
-nvm use
-```
-
-### Passos
+Resumo rápido — rodando localmente (dev)
 
 1. Clone o repositório:
+
 ```bash
 git clone <repository-url>
 cd postech-blog-api
 ```
 
-2. Instale as dependências:
+2. Instale dependências:
+
 ```bash
 npm install
 ```
 
-3. Configure as variáveis de ambiente:
+3. Copie o arquivo de exemplo de variáveis de ambiente e ajuste conforme necessário:
+
 ```bash
 cp .env.example .env
 ```
 
 4. Inicie o ambiente de desenvolvimento (Colima + Docker + MongoDB):
+
 ```bash
 npm run dev:setup
 ```
-> Este comando inicializa o Colima, aguarda o Docker daemon, sobe o MongoDB e verifica a conectividade. Na primeira execução, o banco é populado com 3 posts de exemplo.
 
-5. Inicie a aplicação:
+5. Inicie a API em modo desenvolvimento (hot-reload):
+
 ```bash
-# Desenvolvimento (com hot-reload)
 npm run dev
-
-# Produção
-npm start
 ```
 
-6. Para parar tudo (MongoDB + Colima):
-```bash
-npm run dev:stop
-```
+Depois de subir, a API estará disponível em http://localhost:3000 e a documentação Swagger em http://localhost:3000/api-docs
 
-## 📝 Uso
+Se precisar de informações detalhadas sobre qualquer tópico (arquitetura, testes, docker, endpoints etc.), abra os arquivos em `docs/` listados acima.
 
-### Variáveis de Ambiente
-
-| Variável | Descrição | Padrão |
-|----------|-----------|--------|
-| `PORT` | Porta do servidor | `3000` |
-| `NODE_ENV` | Ambiente (development/production/test) | `development` |
-| `MONGODB_URI` | URI de conexão MongoDB | `mongodb://localhost:27017/postech_blog` |
-| `LOG_LEVEL` | Nível de log (error/warn/info/debug) | `info` |
-| `JWT_SECRET` | Chave secreta para assinar tokens JWT | — (obrigatório) |
-| `JWT_EXPIRES_IN` | Tempo de expiração do token JWT | `7d` |
-| `TEACHER_ACCESS_CODE` | Código de acesso para registro de professoras | — (obrigatório) |
-
-### Scripts npm
-
-```bash
-# Ambiente de desenvolvimento
-npm run dev:setup     # Inicia Colima + Docker + MongoDB
-npm run dev:stop      # Para tudo (MongoDB + Colima)
-npm run dev:reset     # Reseta dados do MongoDB e reinicia
-npm run dev:status    # Mostra status de todos os serviços
-
-# Aplicação
-npm start             # Inicia em produção
-npm run dev           # Inicia com hot-reload (nodemon)
-
-# Testes
-npm test              # Executa testes com coverage
-npm run test:watch    # Executa testes em modo watch
-npm run test:mutation # Executa testes de mutação (Stryker)
-
-# Qualidade
-npm run lint          # Verifica código com ESLint
-npm run lint:fix      # Corrige problemas de lint
-npm run format        # Formata código com Prettier
-npm run sonar         # Executa análise SonarQube
-
-# Docker (baixo nível — geralmente use dev:* acima)
-npm run docker:db     # Sobe MongoDB (sem Colima)
-npm run docker:up     # Stack completa: API + MongoDB
-npm run docker:down   # Para stack completa
-npm run docker:logs   # Acompanha logs dos containers
-```
-
-## 📡 Endpoints
-
-### Autenticação
-
-| Método | Rota | Auth | Descrição |
-|--------|------|------|-----------|
-| POST | `/auth/register` | — | Criar conta (`teacher` requer `codigoAcesso`) |
-| POST | `/auth/login` | — | Login, retorna JWT |
-
-### Posts
-
-| Método | Rota | Auth | Descrição |
-|--------|------|------|-----------|
-| GET | `/health` | — | Health check (inclui status do DB) |
-| GET | `/posts` | — | Lista posts publicados (paginado) |
-| GET | `/posts?status=all` | — | Lista todos os posts (paginado) |
-| GET | `/posts?status=draft` | — | Lista rascunhos |
-| GET | `/posts/search?q=termo` | — | Busca full-text por palavra-chave |
-| GET | `/posts/:id` | — | Busca post por ID |
-| POST | `/posts` | JWT (teacher) | Cria novo post |
-| PUT | `/posts/:id` | JWT (teacher) | Atualiza post |
-| DELETE | `/posts/:id` | JWT (teacher) | Remove post (retorna 204) |
-
-### Exemplos de Requisição
+Licença: ISC
 
 **Registrar conta (student):**
 ```bash

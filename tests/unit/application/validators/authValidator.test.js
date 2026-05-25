@@ -1,4 +1,7 @@
-const { registerSchema, loginSchema } = require('../../../../src/application/validators/authValidator');
+const {
+  registerSchema,
+  loginSchema,
+} = require('../../../../src/application/validators/authValidator');
 
 describe('Auth Validators', () => {
   describe('registerSchema', () => {

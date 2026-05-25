@@ -8,7 +8,7 @@ const { UnauthorizedError } = require('../../../domain/errors/AppError');
 const authenticate = (req, _res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     throw new UnauthorizedError('Token não fornecido');
   }
 
